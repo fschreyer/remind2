@@ -108,10 +108,11 @@ showAreaAndBarPlots(data, items, scales = "fixed")
 
 ```{r FE per capita (by sector, time domain, area plot)}
 items <- c(
+  "FE|CDR pCap",
   "FE|Transport pCap",
   "FE|Buildings pCap",
   "FE|Industry pCap")
-showAreaAndBarPlots(data, items, scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE pCap", scales = "fixed")
 ```
 
 ## FE per capita (by sector, time domain, line graph)
@@ -453,6 +454,18 @@ data %>%
     })
   ) %>%
   showStatsTable()
+
+data %>%
+  calcTimeSeriesStats(
+    "Temperature|Global Mean",
+    stats = list("Period (End of century Value)" = function(v, p) {
+      sprintf("%d (%.2f)", 2100, v[p == 2100])
+    })
+  ) %>%
+  showStatsTable()
+
+
+
 ```
 
 \newpage

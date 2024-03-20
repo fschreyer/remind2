@@ -89,7 +89,6 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
   # Report policy costs, if possible and sensible
   if (is.null(gdx_refpolicycost)) {
     gdx_refpolicycost <- gdx
-    message("gdx_refpolicycost not defined, report 0 everywhere.")
   }
   if (file.exists(gdx_refpolicycost)) {
     gdp_scen <- try(readGDX(gdx, "cm_GDPscen", react = "error"), silent = TRUE)

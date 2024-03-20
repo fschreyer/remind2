@@ -392,7 +392,7 @@ reportMacroEconomy <- function(gdx, regionSubsetList = NULL,
   inteRate <- new.magpie(getRegions(out),
                          getYears(out),
                          c("Interest Rate (t+1)/(t-1)|Real ()", "Interest Rate t/(t-1)|Real ()"),
-                         fill = 0)
+                         fill = NA)
   for (t in getYears(out[, which(getYears(out, as.integer = TRUE) > 2005 &
                                  getYears(out, as.integer = TRUE) < max(getYears(out, as.integer = TRUE))), ])) {
     inteRate[, t, "Interest Rate (t+1)/(t-1)|Real ()"] <-

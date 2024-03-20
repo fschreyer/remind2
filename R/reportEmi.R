@@ -2756,8 +2756,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
       names.wNonEn <- gsub("Emi\\|GHG", "Emi|GHG|w/o Non-energy Use", names.wNonEn)
 
       # remove all pluses from the "Emi w/o Non-energy Use" variables as they do not cover sectors in which non-energy use not relevant and checking aggregation does not make sense
-      names.wNonEn <- gsub("\\|\\+\\|", "\\|", names.wNonEn)
-      names.wNonEn <- gsub("\\|\\++\\|", "\\|", names.wNonEn)
+      names.wNonEn <- deletePlus(names.wNonEn)
 
       # calculate emissions variables with non-energy use
       out.wNonEn <- out[, , emi.vars.wNonEn]
@@ -2861,8 +2860,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     emi.vars.wBunkers.wNonEn <- intersect(emi.vars.wBunkers, emi.vars.wNonEn)
 
     # remove all pluses from the "Emi w/o Non-energy Use" variables as they do not cover sectors in which non-energy use not relevant and checking aggregation does not make sense
-    emi.vars.wBunkers.wNonEn <- gsub("\\|\\+\\|", "\\|", emi.vars.wBunkers.wNonEn)
-    emi.vars.wBunkers.wNonEn <- gsub("\\|\\++\\|", "\\|", emi.vars.wBunkers.wNonEn)
+    emi.vars.wBunkers.wNonEn <- deletePlus(emi.vars.wBunkers.wNonEn)
 
     emi.vars.wBunkers.wNonEn <- gsub("Emi\\|CO2", "Emi|CO2|w/o Non-energy Use", emi.vars.wBunkers.wNonEn)
     emi.vars.wBunkers.wNonEn <- gsub("Emi\\|GHG", "Emi|GHG|w/o Non-energy Use", emi.vars.wBunkers.wNonEn)
@@ -2900,8 +2898,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   # emissions variables with bunkers
   out.wBunkers <- setNames(out[, , emi.vars.wBunkers], names.wBunkers)
   # remove all pluses from variables with bunkers the "Emi w/ Bunkers" variables do not cover sectors in which bunkers are not relevant and checking aggregation does not make sense
-  getNames(out.wBunkers) <- gsub("\\|\\+\\|", "\\|", getNames(out.wBunkers))
-  getNames(out.wBunkers) <- gsub("\\|\\++\\|", "\\|", getNames(out.wBunkers))
+  getNames(out.wBunkers) <- deletePlus(getNames(out.wBunkers))
 
   # subtract bunkers for standard emissions variables for regional values
   regs.wo.glob <- getRegions(out)
@@ -2918,8 +2915,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   # emissions variables with bunkers
   out.wIntraRegionBunkers <- setNames(out[, , emi.vars.wBunkers], names.wIntraRegionBunkers)
   # remove all pluses from variables with intra reg bunkers
-  getNames(out.wIntraRegionBunkers) <- gsub("\\|\\+\\|", "\\|", getNames(out.wIntraRegionBunkers))
-  getNames(out.wIntraRegionBunkers) <- gsub("\\|\\++\\|", "\\|", getNames(out.wIntraRegionBunkers))
+  getNames(out.wIntraRegionBunkers) <- deletePlus(getNames(out.wIntraRegionBunkers))
 
   out <- mbind(out, out.wIntraRegionBunkers)
 
