@@ -997,9 +997,8 @@ df.co2price.weighted <- df.pomeg.expand %>%
 
   ### DAC: calculate Levelized Cost of CO2 from direct air capture
   # DAC energy demand per unit captured CO2 (EJ/GtC)
-
   LCOD <- new.magpie(getRegions(vm_costTeCapital), getYears(vm_costTeCapital),
-                     c("Investment Cost","OMF Cost","Electricity Cost","Heat Cost","Total LCOE"), fill = 0)
+                     c("Investment Cost","Adjustment Cost","OMF Cost","Electricity Cost","Heat Cost","Total LCOE"), fill = 0)
 
   if ("dac" %in% te) {
     p33_fedem <- readGDX(gdx, "p33_fedem", restore_zeros = F, react = "silent")
@@ -1011,14 +1010,17 @@ df.co2price.weighted <- df.pomeg.expand %>%
       p33_fedem[,,"dac.fehes"] <- p33_dac_fedem_heat[,,"fehes"]
     }
 
+
+
     # capital cost in trUSD2005/GtC -> convert to USD2015/tCO2
     LCOD[,,"Investment Cost"] <- vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"] * p_teAnnuity[,,"dac"]*1e3
+    LCOD[,getYears(o_margAdjCostInv),"Adjustment Cost"] <- o_margAdjCostInv[,,"dac"] * 1.2 / 3.66 / vm_capFac[,getYears(o_margAdjCostInv),"dac"] * p_teAnnuity[,,"dac"]*1e3
     LCOD[,,"OMF Cost"] <-  pm_data_omf[,,"dac"]*vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"]*1e3
     # elecitricty cost (convert DAC FE demand to GJ/tCO2 and fuel price to USD/GJ)
     LCOD[,,"Electricity Cost"] <-  p33_fedem[,,"dac.feels"] / 3.66 * Fuel.Price[,,"seel"] / 3.66
     # TODO: adapt to FE prices and new CDR FE structure, temporary: conversion as above, assume for now that heat is always supplied by district heat
     LCOD[,,"Heat Cost"] <- p33_fedem[,,"dac.fehes"] / 3.66 * Fuel.Price[,,"sehe"]  / 3.66
-    LCOD[,,"Total LCOE"] <- LCOD[,,"Investment Cost"]+LCOD[,,"OMF Cost"]+LCOD[,,"Electricity Cost"]+LCOD[,,"Heat Cost"]
+    LCOD[,,"Total LCOE"] <- LCOD[,,"Investment Cost"]+LCOD[,,"Adjustment Cost"]+LCOD[,,"OMF Cost"]+LCOD[,,"Electricity Cost"]+LCOD[,,"Heat Cost"]
   }
 
   getSets(LCOD)[3] <- "cost"
