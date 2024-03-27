@@ -1010,7 +1010,8 @@ df.co2price.weighted <- df.pomeg.expand %>%
       p33_fedem[,,"dac.fehes"] <- p33_dac_fedem_heat[,,"fehes"]
     }
 
-
+    # set NA to 0 in marginal adjustment cost
+    o_margAdjCostInv[is.na(o_margAdjCostInv)] <- 0
 
     # capital cost in trUSD2005/GtC -> convert to USD2015/tCO2
     LCOD[,,"Investment Cost"] <- vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"] * p_teAnnuity[,,"dac"]*1e3
