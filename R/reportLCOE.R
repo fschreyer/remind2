@@ -1532,11 +1532,34 @@ df.co2price.weighted <- df.pomeg.expand %>%
 
  }
 
- ### calculate global average LCOE for region "World"
- LCOE.out.inclGlobal <- new.magpie(c(getRegions(LCOE.out),"GLO"), getYears(LCOE.out), getNames(LCOE.out))
- getSets(LCOE.out.inclGlobal) <- getSets(LCOE.out)
- LCOE.out.inclGlobal[getRegions(LCOE.out),,] <- LCOE.out
- LCOE.out.inclGlobal["GLO",,] <- dimSums(LCOE.out, dim=1) / length(getRegions(LCOE.out))
+ ### calculate global average LCOE for region "World" and other region aggregations
+
+ # Define region subsets
+ regionSubsetList <- toolRegionSubsets(gdx)
+ # ADD EU-27 region aggregation if possible
+ if("EUR" %in% names(regionSubsetList)){
+   regionSubsetList <- c(regionSubsetList,list(
+     "EU27"=c("ENC","EWN","ECS","ESC","ECE","FRA","DEU","ESW")
+   ))
+ }
+
+ # add global region to subset list
+ regionSubsetList <- c(regionSubsetList,list("GLO"=getRegions(LCOE.out)))
+
+
+
+
+ LCOE.out.inclAgg <- new.magpie(c(getRegions(LCOE.out),names(regionSubsetList)), getYears(LCOE.out), getNames(LCOE.out))
+ getSets(LCOE.out.inclAgg) <- getSets(LCOE.out)
+ LCOE.out.inclAgg[getRegions(LCOE.out),,] <- LCOE.out
+ for (i in 1:length( regionSubsetList)) {
+   LCOE.out.inclAgg[names(regionSubsetList)[i],,] <- dimSums(LCOE.out[unlist(regionSubsetList[i]),,], dim=1, na.rm = T) / length(unlist(regionSubsetList[i]))
+ }
+
+
+
+
+ LCOE.out.inclAgg["GLO",,] <- dimSums(LCOE.out, dim=1) / length(getRegions(LCOE.out))
 
 
 
