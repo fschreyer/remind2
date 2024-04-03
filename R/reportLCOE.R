@@ -1532,7 +1532,9 @@ df.co2price.weighted <- df.pomeg.expand %>%
 
  }
 
- ### calculate global average LCOE for region "World" and other region aggregations
+ ### Calculate Averages for Aggregated Regions / World ----
+
+
 
  # Define region subsets
  regionSubsetList <- toolRegionSubsets(gdx)
@@ -1559,15 +1561,10 @@ df.co2price.weighted <- df.pomeg.expand %>%
 
 
 
- LCOE.out.inclAgg["GLO",,] <- dimSums(LCOE.out, dim=1) / length(getRegions(LCOE.out))
-
-
-
  if (output.type %in% c("marginal detail")) {
    return(df.LCOE)
  } else {
-   return(LCOE.out.inclGlobal)
+   return( LCOE.out.inclAgg)
  }
 
- return(LCOE.out)
 }
