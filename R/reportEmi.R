@@ -31,7 +31,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   # emissions calculation requires information from other reporting functions
   if (is.null(output)) {
     message("reportEmi executes reportFE")
-    output <- mbind(output, reportFE(gdx, regionSubsetList, t))
+    output <- mbind(output, reportFE(gdx, regionSubsetList = regionSubsetList, t = t))
   }
 
   # intialize varibles used in dplyr operations
@@ -2287,11 +2287,20 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
 
   ### 5.3 PFCs ----
   out <- mbind(out,
-               setNames(vm_emiFgas[, , "emiFgasCF4"],   "Emi|CF4 (kt CF4/yr)"),
-               setNames(vm_emiFgas[, , "emiFgasC2F6"],  "Emi|C2F6 (kt C2F6/yr)"),
-               setNames(vm_emiFgas[, , "emiFgasC6F14"], "Emi|C6F14 (kt C6F14/yr)"),
-               setNames(vm_emiFgas[, , "emiFgasHFC"],   "Emi|HFC (kt HFC134a-equiv/yr)"),
-               setNames(vm_emiFgas[, , "emiFgasSF6"],   "Emi|SF6 (kt SF6/yr)")
+               setNames(vm_emiFgas[, , "emiFgasCF4"],      "Emi|CF4 (kt CF4/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasC2F6"],     "Emi|C2F6 (kt C2F6/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasC6F14"],    "Emi|C6F14 (kt C6F14/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC"],      "Emi|HFC (kt HFC134a-equiv/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC125"],   "Emi|HFC|HFC125 (kt HFC125/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC134a"],  "Emi|HFC|HFC134a (kt HFC134a/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC143a"],  "Emi|HFC|HFC143a (kt HFC143a/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC227ea"], "Emi|HFC|HFC227ea (kt HFC227ea/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC23"],    "Emi|HFC|HFC23 (kt HFC23/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC245fa"], "Emi|HFC|HFC245fa (kt HFC245fa/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC32"],    "Emi|HFC|HFC32 (kt HFC32/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasHFC43-10"], "Emi|HFC|HFC43-10 (kt HFC43-10/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasPFC"],      "Emi|PFC (kt CF4-equiv/yr)"),
+               setNames(vm_emiFgas[, , "emiFgasSF6"],      "Emi|SF6 (kt SF6/yr)")
   )
 
   ## 6. Emissions across markets ----

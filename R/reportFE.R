@@ -80,7 +80,7 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   vm_demFeSector[is.na(vm_demFeSector)] <- 0
 
   # FE non-energy use
-  vm_demFENonEnergySector <- readGDX(gdx, "vm_demFENonEnergySector", field = "l", restore_zeros = FALSE, react = "silent")[,t,]*TWa_2_EJ
+  vm_demFENonEnergySector <- readGDX(gdx, "vm_demFENonEnergySector", field = "l", spatial = 2, restore_zeros = FALSE, react = "silent")[,t,]*TWa_2_EJ
 
   if (length(vm_demFENonEnergySector) == 0) {
     vm_demFENonEnergySector <- NULL

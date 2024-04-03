@@ -1190,7 +1190,7 @@ df.co2price.weighted <- df.pomeg.expand %>%
 ### Read SE Tax for Electrolysis ----
 
     # read SE tax for electrolysis from GDX
-    v21_tau_SE_tax <- readGDX(gdx, "v21_tau_SE_tax", field = "l", restore_zeros = F)
+    v21_tau_SE_tax <- readGDX(gdx, "v21_tau_SE_tax", field = "l", restore_zeros = F, react = "silent")
     # if not SE tax in run, set to 0
     if(is.null(v21_tau_SE_tax)) {
       v21_tau_SE_tax <- vm_costTeCapital

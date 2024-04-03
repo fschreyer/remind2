@@ -95,7 +95,7 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
     refpolicycost <- if (gdxPath == gdxPaths[[1]]) gdxPath else NULL
     mifContent <- convGDX2MIF(gdxPath, gdx_refpolicycost = refpolicycost, testthat = TRUE)
 
-    expect_no_warning(checkVariableNames(getNames(mifContent, dim = 3)))
+    expect_no_warning(piamInterfaces::checkVarNames(getNames(mifContent, dim = 3)))
 
     computedVariables <- deletePlus(getItems(mifContent, dim = 3.3))
     computedVariables <- gsub("\\(\\)", "(unitless)", computedVariables)

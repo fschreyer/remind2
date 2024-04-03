@@ -23,7 +23,7 @@
 #' @importFrom dplyr %>% bind_rows filter
 #' @importFrom gdx readGDX
 #' @importFrom magclass mbind write.report
-#' @importFrom piamInterfaces checkSummations
+#' @importFrom piamInterfaces checkSummations checkVarNames
 #' @importFrom utils write.csv capture.output
 
 convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
@@ -130,7 +130,7 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
   output <- add_dimension(output,dim=3.1,add = "model",nm = "REMIND")
   output <- add_dimension(output,dim=3.1,add = "scenario",nm = scenario)
 
-  checkVariableNames(getNames(output, dim = 3))
+  checkVarNames(getNames(output, dim = 3))
 
   .reportSummationErrors <- function(msg, testthat) {
     if (!any(grepl('All summation checks were fine', msg))) {

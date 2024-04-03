@@ -81,15 +81,15 @@ reportCapitalStock <- function(gdx,regionSubsetList=NULL,t=c(seq(2005,2060,5),se
         tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apCarH2T"] * pm_conv_cap_2_MioLDV,dim=c(3.1,3.2)),"Est H2 LDV Sales (million vehicles)"))
         tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apCarPeT"] * pm_conv_cap_2_MioLDV,dim=c(3.1,3.2)),"Est ICE LDV Sales (million vehicles)"))
 
-        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,c("apCarDiT","apcarDiEffT","apcarDiEffH2T")],dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|uedit (NA)"))
-        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,"apCarDiT"]                                 ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|apCarDiT (NA)"))
-        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,"apcarDiEffT"]                              ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|apcarDiEffT (NA)"))
-        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,"apcarDiEffH2T"]                            ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|apcarDiEffH2T (NA)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,c("apCarDiT","apcarDiEffT","apcarDiEffH2T")],dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|uedit (arbitrary unit)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,"apCarDiT"]                                 ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|apCarDiT (arbitrary unit)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,"apcarDiEffT"]                              ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|apcarDiEffT (arbitrary unit)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_cap[,,"apcarDiEffH2T"]                            ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Stock|apcarDiEffH2T (arbitrary unit)"))
 
-        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,c("apCarDiT","apcarDiEffT","apcarDiEffH2T")],dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|uedit (NA)"))
-        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apCarDiT"]                                 ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|apCarDiT (NA)"))
-        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apcarDiEffT"]                              ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|apcarDiEffT (NA)"))
-        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apcarDiEffH2T"]                            ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|apcarDiEffH2T (NA)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,c("apCarDiT","apcarDiEffT","apcarDiEffH2T")],dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|uedit (arbitrary unit)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apCarDiT"]                                 ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|apCarDiT (arbitrary unit)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apcarDiEffT"]                              ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|apcarDiEffT (arbitrary unit)"))
+        tmp <- mbind(tmp,setNames(dimSums(vm_deltaCap[,,"apcarDiEffH2T"]                            ,dim=c(3.1,3.2)), "Services and Products|Transport|non-LDV|Sales|apcarDiEffH2T (arbitrary unit)"))
 
 
         ## add global values

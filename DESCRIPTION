@@ -1,8 +1,8 @@
 Type: Package
 Package: remind2
 Title: The REMIND R package (2nd generation)
-Version: 1.136.1
-Date: 2024-03-18
+Version: 1.137.5
+Date: 2024-04-02
 Authors@R: c(
     person("Renato", "Rodrigues", , "renato.rodrigues@pik-potsdam.de", role = c("aut", "cre")),
     person("Lavinia", "Baumstark", role = "aut"),
@@ -53,10 +53,8 @@ Imports:
     ggplot2,
     gms,
     htmltools,
-    iamc,
     knitr,
     lucode2 (>= 0.43.0),
-    luplot,
     luscale,
     lusweave,
     madrat,
@@ -80,10 +78,8 @@ Imports:
     jsonlite
 Suggests:
     covr,
-    flexdashboard,
     gridExtra,
     kableExtra,
-    stringr,
     testthat,
     tidyverse
 VignetteBuilder: 

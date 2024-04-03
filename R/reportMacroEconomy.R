@@ -391,11 +391,11 @@ reportMacroEconomy <- function(gdx, regionSubsetList = NULL,
   # calculate interest rate
   inteRate <- new.magpie(getRegions(out),
                          getYears(out),
-                         c("Interest Rate (t+1)/(t-1)|Real ()", "Interest Rate t/(t-1)|Real ()"),
+                         c("Interest Rate (t+1)/(t-1)|Real (unitless)", "Interest Rate t/(t-1)|Real (unitless)"),
                          fill = NA)
   for (t in getYears(out[, which(getYears(out, as.integer = TRUE) > 2005 &
                                  getYears(out, as.integer = TRUE) < max(getYears(out, as.integer = TRUE))), ])) {
-    inteRate[, t, "Interest Rate (t+1)/(t-1)|Real ()"] <-
+    inteRate[, t, "Interest Rate (t+1)/(t-1)|Real (unitless)"] <-
        (1
         - ((setYears(pm_pvp[, (which(getYears(pm_pvp) == t) + 1), ], t) /
               setYears(pm_pvp[, (which(getYears(pm_pvp) == t) - 1), ], t))
@@ -403,7 +403,7 @@ reportMacroEconomy <- function(gdx, regionSubsetList = NULL,
                      getYears(pm_pvp[, (which(getYears(pm_pvp) == t) - 1), ], as.integer = TRUE)))
            )
        )
-    inteRate[, t, "Interest Rate t/(t-1)|Real ()"] <-
+    inteRate[, t, "Interest Rate t/(t-1)|Real (unitless)"] <-
       (1
        - ((pm_pvp[, t, ] / setYears(pm_pvp[, (which(getYears(pm_pvp) == t) - 1), ], t))
            ^ (1 / (getYears(pm_pvp[, t, ], as.integer = TRUE) - getYears(pm_pvp[, (which(getYears(pm_pvp) == t) - 1), ],
