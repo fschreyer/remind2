@@ -1054,6 +1054,14 @@ df.co2price.weighted <- df.pomeg.expand %>%
   # CO2 required per unit output (for CCU technologies)
   if(module2realisation["CCU",2] == "on") {
     p39_co2_dem <- readGDX(gdx, c("p39_co2_dem","p39_ratioCtoH"), restore_zeros = F)[,,]
+    # if parameter is zero
+    if (is.null(getNames(p39_co2_dem))) {
+      # some dummy data, only needed to create the following data frame if CCU is off
+      p39_co2_dem <- new.magpie(getRegions(vm_costTeCapital), getYears(vm_costTeCapital),
+                                names =  c("MeOH","h22ch4"),
+                                sets = c("region","year","all_te"),
+                                fill = 0)
+    }
   } else {
     # some dummy data, only needed to create the following data frame if CCU is off
     p39_co2_dem <- new.magpie(getRegions(vm_costTeCapital), getYears(vm_costTeCapital), fill = 0)
