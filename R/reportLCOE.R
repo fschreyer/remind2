@@ -1044,6 +1044,13 @@ df.co2price.weighted <- df.pomeg.expand %>%
   ### for now, just assume CO2 Capture Cost = DAC Cost
   Co2.Capt.Price[,,] <- LCOD[,,"dac"][,,"Total LCOE"]
 
+  # if captured CO2 supply curve used -> calculate Capture Cost from supply curve parameters and quantities
+  pm_supplyCurve_coeff <- readGDX(gdx, "pm_supplyCurve_coeff", restore_zeros = F)
+  if ("cco2" %in% getNames(pm_supplyCurve_coeff, dim = 1)) {
+    vm_Mport_SC <- readGDX(gdx, "vm_Mport_SC", field = "l", restore_zeros = F)
+    Co2.Capt.Price <-  collapseNames(pm_supplyCurve_coeff[,,"cco2.1"] + 2 * pm_supplyCurve_coeff[,,"cco2.2"] * vm_Mport_SC[,,"cco2"]) * 1e3 * 1.2 / 3.66
+  }
+
   df.Co2.Capt.Price <- as.quitte(Co2.Capt.Price) %>%
     rename(Co2.Capt.Price = value) %>%
     select(region, period, Co2.Capt.Price)
