@@ -23,7 +23,7 @@
 #' @importFrom magclass mselect mselect<- collapseDim getItems getRegions getYears
 #' @importFrom madrat toolAggregate
 #' @importFrom tibble as_tibble
-
+#' @importFrom piamutils deletePlus
 
 reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                       t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150)) {
@@ -141,7 +141,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   }
 
   # FE non-energy use
-  vm_demFENonEnergySector <- readGDX(gdx, "vm_demFENonEnergySector", field = "l",
+  vm_demFENonEnergySector <- readGDX(gdx, "vm_demFENonEnergySector", field = "l", spatial = 2,
                                      restore_zeros = F, react = "silent")[,t,]
 
   if (length(vm_demFENonEnergySector) == 0) {

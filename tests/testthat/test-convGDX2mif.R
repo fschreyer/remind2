@@ -14,50 +14,17 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
   skip_if_not(as.logical(gdxrrw::igdx(silent = TRUE)), "gdxrrw is not initialized properly")
 
   # add GDXs for comparison here:
+  gdxList <- c("fulldata-release.gdx" = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_fulldata.gdx",
+               "fulldata-AMT.gdx"     = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_SSP2EU-PkBudg650-AMT.gdx")
+
   gdxPaths <- NULL
-
-  if (length(gdxPaths) == 0) {
-    defaultGdxPath <- file.path(tempdir(), "fulldata.gdx")
-    if (!file.exists(defaultGdxPath)) {
-      utils::download.file("https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_fulldata.gdx",
-        defaultGdxPath,
-        mode = "wb", quiet = TRUE
-      )
+  for (i in seq_along(gdxList)) {
+    from <- gdxList[i]
+    to   <- file.path(tempdir(), names(gdxList[i]))
+    if (!file.exists(to)) {
+      utils::download.file(from, to, mode = "wb", quiet = TRUE)
     }
-    gdxPaths <- defaultGdxPath
-  }
-
-  # finds for each AMT scenario the most recent, successfully converged GDX,
-  # that is no older than 30 days
-  .findAMTgdx <- function(gdxPaths = NULL, scenario = NULL) {
-    # regex for "%Y-%m-%d_%H.%M.%S" timestamp
-    datetimepattern <- "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}\\.[0-9]{2}\\.[0-9]{2}"
-
-    .did_REMIND_finish <- function(path) {
-      logpath <- sub("fulldata.gdx$", "full.log", path)
-      return(   file.exists(logpath)
-             && "*** Status: Normal completion" %in% readLines(logpath,
-                                                               warn = FALSE))
-    }
-
-    .latest_run_of_scenario <- function(path) {
-      # sort by scenario and decreasing time, latest runs come first
-      path <- path %>%
-        sort(decreasing = TRUE)
-
-      # duplicates are older than the preceding runs
-      dup <- duplicated(sub(paste0("_", datetimepattern), "",
-                            basename(dirname(path))))
-
-      # everything that is no duplicate is the latest run of that scenario
-      return(path[!dup])
-    }
-
-    return(c(gdxPaths,
-             Sys.glob(paste0("/p/projects/remind/modeltests/remind/output/",
-                             scenario, "*/fulldata.gdx")) %>%
-               Filter(.did_REMIND_finish, x = .) %>%
-               .latest_run_of_scenario()))
+    gdxPaths <- c(gdxPaths, to)
   }
 
   checkPiamTemplates <- function(computedVariables) {
@@ -81,10 +48,6 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
 
   # uncomment to add current calibration gdxes
   # gdxPaths <- c(gdxPaths, Sys.glob("/p/projects/remind/inputdata/CESparametersAndGDX/*.gdx"))
-  # uncomment to add debugging example gdx files
-  # gdxPaths <- c(gdxPaths, Sys.glob("/p/projects/remind/debugging/gdx-examples/*.gdx"))
-  # uncomment to add gdx files from most recent AMT runs
-  gdxPaths <- c(gdxPaths, .findAMTgdx(scenario = "SSP2EU-NPi-AMT"))
 
   numberOfMifs <- 0
 

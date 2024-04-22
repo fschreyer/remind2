@@ -15,6 +15,7 @@
 #' @importFrom rlang .data
 #' @importFrom dplyr %>% left_join filter select rename mutate arrange ungroup across mutate_all coalesce group_by if_else
 #' @importFrom tidyr complete
+#' @importFrom utils write.table
 #' @export
 reportDIETER <- function(dieterDatafile = "report_DIETER.gdx", outputDir = ".") {
   datapath <- function(fname) {

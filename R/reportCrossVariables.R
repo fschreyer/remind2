@@ -84,7 +84,7 @@ reportCrossVariables <- function(gdx, output = NULL, regionSubsetList = NULL,
 
   tmp <- mbind(tmp,setNames(
                    output[r,,"Energy Investments (billion US$2005/yr)"]
-                  -output[r,,"Energy Investments|Electricity (billion US$2005/yr)"],"Energy Investments|Non-Elec (billion US$2005/yr)"))
+                  -output[r,,"Energy Investments|Electricity (billion US$2005/yr)"],"Energy Investments|Non-Electricity (billion US$2005/yr)"))
   # gas capacity factor
   tmp <- mbind(tmp,setNames(
                    output[r,,"SE|Electricity|Gas (EJ/yr)"] / output[r,,"Cap|Electricity|Gas (GW)"] / TWa_2_EJ * 1000 * 100,
@@ -110,8 +110,7 @@ reportCrossVariables <- function(gdx, output = NULL, regionSubsetList = NULL,
                    (output[r,,"SE|Electricity|Solar (EJ/yr)"] - output[r,,"SE|Electricity|Curtailment|Solar (EJ/yr)"]) /
                     output[r,,"Cap|Electricity|Solar (GW)"] / TWa_2_EJ * 1000 * 100, "Real Capacity Factor|Electricity|Solar (%)"))
 
-
-    # add global values
+  # add global values
   tmp <- mbind(tmp,dimSums(tmp,dim=1))
   # add other region aggregations
   if (!is.null(regionSubsetList))
@@ -119,26 +118,21 @@ reportCrossVariables <- function(gdx, output = NULL, regionSubsetList = NULL,
 
   # correct global values for intensive variables (prices, LCOES, Capacity factors)
   map <- data.frame(region=getRegions(tmp["GLO",,,invert=TRUE]),world="GLO",stringsAsFactors=FALSE)
-  tmp["GLO",,"Capacity Factor|Electricity|Gas (%)"] <-
-    speed_aggregate(tmp[map$region,,"Capacity Factor|Electricity|Gas (%)"],map,weight=output[map$region,,"Cap|Electricity|Gas (GW)"])
-  tmp["GLO",,"Real Capacity Factor|Electricity|Wind (%)"] <-
-    speed_aggregate(tmp[map$region,,"Real Capacity Factor|Electricity|Wind (%)"],map,weight=output[map$region,,"Cap|Electricity|Wind (GW)"])
-  tmp["GLO",,"Theoretical Capacity Factor|Electricity|Wind (%)"] <-
-    speed_aggregate(tmp[map$region,,"Theoretical Capacity Factor|Electricity|Wind (%)"],map,weight=output[map$region,,"Cap|Electricity|Wind (GW)"])
-  tmp["GLO",,"Real Capacity Factor|Electricity|Solar (%)"] <-
-    speed_aggregate(tmp[map$region,,"Real Capacity Factor|Electricity|Solar (%)"],map,weight=output[map$region,,"Cap|Electricity|Solar (GW)"])
-  tmp["GLO",,"Theoretical Capacity Factor|Electricity|Solar (%)"] <-
-    speed_aggregate(tmp[map$region,,"Theoretical Capacity Factor|Electricity|Solar (%)"],map,weight=output[map$region,,"Cap|Electricity|Solar (GW)"])
-
+  varWeights <- c("Capacity Factor|Electricity|Gas (%)" = "Cap|Electricity|Gas (GW)",
+                  "Real Capacity Factor|Electricity|Wind (%)" = "Cap|Electricity|Wind (GW)",
+                  "Theoretical Capacity Factor|Electricity|Wind (%)" = "Cap|Electricity|Wind (GW)",
+                  "Real Capacity Factor|Electricity|Solar (%)" = "Cap|Electricity|Solar (GW)",
+                  "Theoretical Capacity Factor|Electricity|Solar (%)" = "Cap|Electricity|Solar (GW)")
+  for (var in names(varWeights)) {
+    tmp["GLO",,var] <- speed_aggregate(tmp[map$region,,var], map, weight = output[map$region,,varWeights[[var]]])
+  }
   # correct region aggregated values for intensive variables (prices, LCOES, Capacity factors)
   if (!is.null(regionSubsetList)){
     for (region in names(regionSubsetList)){
       map <- data.frame(region=regionSubsetList[[region]],parentRegion=region,stringsAsFactors=FALSE)
-      tmp[region,,"Capacity Factor|Electricity|Gas (%)"] <- speed_aggregate(tmp[regionSubsetList[[region]],,"Capacity Factor|Electricity|Gas (%)"],map,weight=output[regionSubsetList[[region]],,"Cap|Electricity|Gas (GW)"])
-      tmp[region,,"Real Capacity Factor|Electricity|Wind (%)"] <- speed_aggregate(tmp[regionSubsetList[[region]],,"Real Capacity Factor|Electricity|Wind (%)"],map,weight=output[regionSubsetList[[region]],,"Cap|Electricity|Wind (GW)"])
-      tmp[region,,"Theoretical Capacity Factor|Electricity|Wind (%)"] <- speed_aggregate(tmp[regionSubsetList[[region]],,"Theoretical Capacity Factor|Electricity|Wind (%)"],map,weight=output[regionSubsetList[[region]],,"Cap|Electricity|Wind (GW)"])
-      tmp[region,,"Real Capacity Factor|Electricity|Solar (%)"] <- speed_aggregate(tmp[regionSubsetList[[region]],,"Real Capacity Factor|Electricity|Solar (%)"],map,weight=output[regionSubsetList[[region]],,"Cap|Electricity|Solar (GW)"])
-      tmp[region,,"Theoretical Capacity Factor|Electricity|Solar (%)"] <- speed_aggregate(tmp[regionSubsetList[[region]],,"Theoretical Capacity Factor|Electricity|Solar (%)"],map,weight=output[regionSubsetList[[region]],,"Cap|Electricity|Solar (GW)"])
+      for (var in names(varWeights)) {
+        tmp[region,,var] <- speed_aggregate(tmp[regionSubsetList[[region]],,var], map, weight = output[regionSubsetList[[region]],,varWeights[[var]]])
+      }
     }
   }
 
@@ -189,7 +183,33 @@ reportCrossVariables <- function(gdx, output = NULL, regionSubsetList = NULL,
     setNames(
         output[,,"Welfare|Real and undiscounted|Yearly (arbitrary unit/yr)"]
       / output[,,"Population (million)"],
-      "Welfare|per capita|Real and undiscounted|Yearly (arbitrary unit/yr)"))
+      "Welfare|per capita|Real and undiscounted|Yearly (arbitrary unit/yr)"),
+
+    setNames(
+        output[,,"Emi|CO2|Industrial Processes|Cement (Mt CO2/yr)"]
+      / output[,,"Production|Industry|Cement (Mt/yr)"],
+      "Carbon Intensity|Production|Cement|+|Industrial Processes (Mt CO2/Mt)"),
+
+    setNames(
+      (  output[,,"Emi|CO2|Energy|Demand|Industry|Cement|Gases|Fossil (Mt CO2/yr)"]
+       + output[,,"Emi|CO2|Energy|Demand|Industry|Cement|Liquids|Fossil (Mt CO2/yr)"]
+       + output[,,"Emi|CO2|Energy|Demand|Industry|Cement|Solids|Fossil (Mt CO2/yr)"]
+      ) / output[,,"Production|Industry|Cement (Mt/yr)"],
+      "Carbon Intensity|Production|Cement|+|Fossil|Energy|Demand (Mt CO2/Mt)"),
+
+    setNames(
+      (  output[,,"Emi|CO2|Energy|Demand|Industry|Steel|Gases|Fossil (Mt CO2/yr)"]
+       + output[,,"Emi|CO2|Energy|Demand|Industry|Steel|Liquids|Fossil (Mt CO2/yr)"]
+       + output[,,"Emi|CO2|Energy|Demand|Industry|Steel|Solids|Fossil (Mt CO2/yr)"]
+      ) / output[,,"Production|Industry|Steel (Mt/yr)"],
+      "Carbon Intensity|Production|Steel|Fossil|Energy|Demand (Mt CO2/Mt)")
+
+  )
+
+  tmp <- mbind(tmp,setNames(
+                      tmp[,,"Carbon Intensity|Production|Cement|+|Industrial Processes (Mt CO2/Mt)"]
+                    + tmp[,,"Carbon Intensity|Production|Cement|+|Fossil|Energy|Demand (Mt CO2/Mt)"],
+                   "Carbon Intensity|Production|Cement (Mt CO2/Mt)"))
 
   # Energy shares
   tmp <- mbind(

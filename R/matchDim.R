@@ -6,9 +6,17 @@
 #' @param x a magclass object to be modified
 #' @param ref a magclass object used as a reference for the modification
 #' @param fill value to be set in new dimensions
+#' @importFrom magclass ndim
 #'
 #' @export
 matchDim <- function(x, ref, fill = 0) {
+
+  if (ndim(x, dim = 3) != ndim(ref, dim = 3)) {
+    stop(
+      "Unsupported case: magclass objects x and ref have different number of ",
+      "subdimensions in third dimension."
+    )
+  }
 
   # extend the object to the union of both objects
   r <- new.magpie(
