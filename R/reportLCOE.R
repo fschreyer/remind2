@@ -988,15 +988,13 @@ df.co2price.weighted <- df.pomeg.expand %>%
 
 
 
-  ### Calculate CO2 capture cost ----
+  ### Calculate CO2 Provision Cost for CCU ----
 
+  # This LCODAC part was previously used for the CO2 Provision Cost but is not used anymore.
+  # It is still kept here as it calculated the levelized cost of DAC which are reported by this function as well.
+  # The Co2 Provision cost for CCU are now calculated via the marginal of the q39_emiCCU equation (see below)-
 
-  # temporary solution, take LCOD of DAC as the CO2 Capture Cost
-
-  # TODO: take co2 capture cost from a fitting marginal of REMIND equations
-
-  ### DAC: calculate Levelized Cost of CO2 from direct air capture
-  # DAC energy demand per unit captured CO2 (EJ/GtC)
+  # calculate levelized cost of CO2 from direct air capture
   LCOD <- new.magpie(getRegions(vm_costTeCapital), getYears(vm_costTeCapital),
                      c("Investment Cost","Adjustment Cost","OMF Cost","Electricity Cost","Heat Cost","Total LCOE"), fill = 0)
 
@@ -1015,7 +1013,9 @@ df.co2price.weighted <- df.pomeg.expand %>%
 
     # capital cost in trUSD2005/GtC -> convert to USD2015/tCO2
     LCOD[,,"Investment Cost"] <- vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"] * p_teAnnuity[,,"dac"]*1e3
-    LCOD[,getYears(o_margAdjCostInv),"Adjustment Cost"] <- o_margAdjCostInv[,,"dac"] * 1.2 / 3.66 / vm_capFac[,getYears(o_margAdjCostInv),"dac"] * p_teAnnuity[,,"dac"]*1e3
+    if ("dac" %in% getNames(o_margAdjCostInv)) {
+      LCOD[,getYears(o_margAdjCostInv),"Adjustment Cost"] <- o_margAdjCostInv[,,"dac"] * 1.2 / 3.66 / vm_capFac[,getYears(o_margAdjCostInv),"dac"] * p_teAnnuity[,,"dac"]*1e3
+    }
     LCOD[,,"OMF Cost"] <-  pm_data_omf[,,"dac"]*vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"]*1e3
     # elecitricty cost (convert DAC FE demand to GJ/tCO2 and fuel price to USD/GJ)
     LCOD[,,"Electricity Cost"] <-  p33_fedem[,,"dac.feels"] / 3.66 * Fuel.Price[,,"seel"] / 3.66
@@ -1035,14 +1035,12 @@ df.co2price.weighted <- df.pomeg.expand %>%
     add_dimension(add = "sector", dim=3.4, nm = "carbon management")
 
 
-  # Co2 Capture price, marginal of q_balcapture,  convert from tr USD 2005/GtC to USD2015/tCO2
-  qm_balcapture  <- readGDX(gdx,"q_balcapture",field="m", restore_zeros = F)
-  Co2.Capt.Price <- qm_balcapture /
-                      (qm_budget[,getYears(qm_balcapture),]+1e-10)*1e3*1.2/3.66 ## looks weird
+  q39_emiCCU <- readGDX(gdx, "q39_emiCCU", field = "m", restore_zeros = F)
+  qm39_emiCCU.Marginal <- q39_emiCCU /
+    (qm_budget[,getYears(q39_emiCCU),]+1e-10)*1e3*1.2/3.66
 
+  Co2.Capt.Price <- qm39_emiCCU.Marginal
 
-  ### for now, just assume CO2 Capture Cost = DAC Cost
-  Co2.Capt.Price[,,] <- LCOD[,,"dac"][,,"Total LCOE"]
 
   # if captured CO2 supply curve used -> calculate Capture Cost from supply curve parameters and quantities
   pm_supplyCurve_coeff <- readGDX(gdx, "pm_supplyCurve_coeff", restore_zeros = F)
@@ -1052,8 +1050,8 @@ df.co2price.weighted <- df.pomeg.expand %>%
   }
 
   df.Co2.Capt.Price <- as.quitte(Co2.Capt.Price) %>%
-    rename(Co2.Capt.Price = value) %>%
-    select(region, period, Co2.Capt.Price)
+    rename(Co2.Capt.Price = value, tech = all_te) %>%
+    select(region, period, tech, Co2.Capt.Price)
 
 
 
@@ -1302,7 +1300,7 @@ df.co2price.weighted <- df.pomeg.expand %>%
     left_join(df.eff, by = c("region", "period", "tech")) %>%
     left_join(df.emiFac, by = c("region", "tech")) %>%
     left_join(df.emifac.se2fe, by = c("region", "tech")) %>%
-    left_join(df.Co2.Capt.Price, by = c("region", "period")) %>%
+    left_join(df.Co2.Capt.Price, by = c("region", "period", "tech")) %>%
     left_join(df.co2_dem, by = c("region", "period", if (module2realisation["CCU",2] == "on") "tech")) %>%
     left_join(df.CO2StoreShare, by = c("region", "period")) %>%
     left_join(df.secfuel, by = c("region", "period", "tech", "fuel")) %>%
