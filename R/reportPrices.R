@@ -1081,8 +1081,21 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
                                "Internal|Model Marginal|q_limitCapCCS (US$2005/tCO2)"))
 
 
+  #### qm_prodFe Marginals ----
+  #
+
+
+  q_balFe <- readGDX(gdx, "qm_balFe", field = "m", restore_zeros = F)
+
+  BalFe.Marginal <- collapseNames(q_balFe /
+                                    (budget.m[,getYears(q_balFe),]+1e-10))*tdptwyr2dpgj
+
+
+  BalFe.Marginal <- setNames( BalFe.Marginal, paste0("Internal|Model Marginal|balFe|",
+                                                     getNames(BalFe.Marginal, dim = 3)," (US$2005/GJ)"))
+
   # bind marginal variables to all prices variables
-  out <- mbind(out,Marginals)
+  out <- mbind(out,Marginals,BalFe.Marginal)
 
 
 
