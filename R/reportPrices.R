@@ -941,7 +941,10 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
                "Price|Final Energy|Industry|Gases (US$2005/GJ)"       = "FE|Industry|Gases (EJ/yr)",
                "Price|Final Energy|Industry|Hydrogen (US$2005/GJ)"       = "FE|Industry|Hydrogen (EJ/yr)",
                "Price|Final Energy|Industry|Heat (US$2005/GJ)"       = "FE|Industry|Heat (EJ/yr)",
-               "Price|Final Energy|Industry|Solids (US$2005/GJ)"       = "FE|Industry|Solids (EJ/yr)"
+               "Price|Final Energy|Industry|Solids (US$2005/GJ)"       = "FE|Industry|Solids (EJ/yr)",
+
+               ## FE prices before taxes (qm_balFe Marginal)
+               "Internal|Model Marginal|balFe|tdfosdie (US$2005/GJ)" = "FE|Transport|Liquids|Hydrogen (EJ/yr)"
                )
 
   # transport-specific mappings depending on realization
@@ -1098,7 +1101,7 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
   out <- mbind(out,Marginals,BalFe.Marginal)
 
 
-
+  ### Regional Quantity-weighted Aggregation of Prices ----
 
 
   # add global prices
