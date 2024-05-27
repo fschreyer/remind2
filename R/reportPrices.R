@@ -941,11 +941,38 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
                "Price|Final Energy|Industry|Gases (US$2005/GJ)"       = "FE|Industry|Gases (EJ/yr)",
                "Price|Final Energy|Industry|Hydrogen (US$2005/GJ)"       = "FE|Industry|Hydrogen (EJ/yr)",
                "Price|Final Energy|Industry|Heat (US$2005/GJ)"       = "FE|Industry|Heat (EJ/yr)",
-               "Price|Final Energy|Industry|Solids (US$2005/GJ)"       = "FE|Industry|Solids (EJ/yr)",
+               "Price|Final Energy|Industry|Solids (US$2005/GJ)"       = "FE|Industry|Solids (EJ/yr)"
 
-               ## FE prices before taxes (qm_balFe Marginal)
-               "Internal|Model Marginal|balFe|tdfosdie (US$2005/GJ)" = "FE|Transport|Liquids|Hydrogen (EJ/yr)"
+
                )
+
+  ## FE prices before taxes (qm_balFe Marginal)
+  int2ext <- c(int2ext,
+
+               "Internal|Model Marginal|balFe|tdfosdie (US$2005/GJ)" = "FE|Transport|Liquids|Fossil (EJ/yr)",
+               "Internal|Model Marginal|balFe|tdsyndie (US$2005/GJ)" = "FE|Transport|Liquids|Hydrogen (EJ/yr)",
+
+               "Internal|Model Marginal|balFe|tdfoshos (US$2005/GJ)" = "FE|Industry|Liquids|Fossil (EJ/yr)",
+               "Internal|Model Marginal|balFe|tdsynhos (US$2005/GJ)" = "FE|Industry|Liquids|Hydrogen (EJ/yr)",
+
+               "Internal|Model Marginal|balFe|tdfosgas (US$2005/GJ)" = "FE|Industry|Gases|Fossil (EJ/yr)",
+               "Internal|Model Marginal|balFe|tdsyngas (US$2005/GJ)" = "FE|Industry|Gases|Hydrogen (EJ/yr)"
+
+  )
+
+  ## Fuel-switching co2 prices based on qm_balFe Marginal
+  int2ext <- c(int2ext,
+
+               "Internal|Model Marginal|FSCP|balFe|fedie (US$2005/tCO2)" = "FE|Transport|Liquids|Hydrogen (EJ/yr)",
+               "Internal|Model Marginal|FSCP|balFe|fehos (US$2005/tCO2)" = "FE|Industry|Liquids|Hydrogen (EJ/yr)",
+               "Internal|Model Marginal|FSCP|balFe|fegas (US$2005/tCO2)" = "FE|Industry|Gases|Hydrogen (EJ/yr)"
+
+
+  )
+
+
+
+
 
   # transport-specific mappings depending on realization
   if (module2realisation["transport",2] == "complex") {
@@ -1097,8 +1124,23 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
   BalFe.Marginal <- setNames( BalFe.Marginal, paste0("Internal|Model Marginal|balFe|",
                                                      getNames(BalFe.Marginal, dim = 3)," (US$2005/GJ)"))
 
+
+  #### Fuel-switching CO2 prices between synthetic and fossil fuels ----
+  # difference between prices divided by emissions factor
+  FSCP.Marginal <- mbind(
+                    setNames( (BalFe.Marginal[,,"Internal|Model Marginal|balFe|tdsyndie (US$2005/GJ)"]-BalFe.Marginal[,,"Internal|Model Marginal|balFe|tdfosdie (US$2005/GJ)"] ) / 0.069,
+                              "Internal|Model Marginal|FSCP|balFe|fedie (US$2005/tCO2)"),
+
+                    setNames( (BalFe.Marginal[,,"Internal|Model Marginal|balFe|tdsynhos (US$2005/GJ)"]-BalFe.Marginal[,,"Internal|Model Marginal|balFe|tdfoshos (US$2005/GJ)"] ) / 0.069,
+                              "Internal|Model Marginal|FSCP|balFe|fehos (US$2005/tCO2)"),
+
+                    setNames( (BalFe.Marginal[,,"Internal|Model Marginal|balFe|tdsyngas (US$2005/GJ)"]-BalFe.Marginal[,,"Internal|Model Marginal|balFe|tdfosgas (US$2005/GJ)"] ) / 0.05,
+                              "Internal|Model Marginal|FSCP|balFe|fegas (US$2005/tCO2)")
+  )
+
   # bind marginal variables to all prices variables
-  out <- mbind(out,Marginals,BalFe.Marginal)
+  out <- mbind(out,Marginals,BalFe.Marginal, FSCP.Marginal)
+
 
 
   ### Regional Quantity-weighted Aggregation of Prices ----
