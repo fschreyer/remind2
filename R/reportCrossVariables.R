@@ -22,9 +22,9 @@
 #' @importFrom gdx readGDX
 #' @importFrom magclass getYears getRegions mbind setNames mselect
 #' new.magpie setYears mcalc
-#' @importFrom luscale speed_aggregate
 #' @importFrom tibble as_tibble
 #' @importFrom tidyselect everything
+#' @importFrom madrat toolAggregate
 #'
 
 reportCrossVariables <- function(gdx, output = NULL, regionSubsetList = NULL,
@@ -124,14 +124,14 @@ reportCrossVariables <- function(gdx, output = NULL, regionSubsetList = NULL,
                   "Real Capacity Factor|Electricity|Solar (%)" = "Cap|Electricity|Solar (GW)",
                   "Theoretical Capacity Factor|Electricity|Solar (%)" = "Cap|Electricity|Solar (GW)")
   for (var in names(varWeights)) {
-    tmp["GLO",,var] <- speed_aggregate(tmp[map$region,,var], map, weight = output[map$region,,varWeights[[var]]])
+    tmp["GLO",,var] <- toolAggregate(tmp[map$region,,var], rel = map, weight = output[map$region,,varWeights[[var]]])
   }
   # correct region aggregated values for intensive variables (prices, LCOES, Capacity factors)
   if (!is.null(regionSubsetList)){
     for (region in names(regionSubsetList)){
       map <- data.frame(region=regionSubsetList[[region]],parentRegion=region,stringsAsFactors=FALSE)
       for (var in names(varWeights)) {
-        tmp[region,,var] <- speed_aggregate(tmp[regionSubsetList[[region]],,var], map, weight = output[regionSubsetList[[region]],,varWeights[[var]]])
+        tmp[region,,var] <- toolAggregate(tmp[regionSubsetList[[region]],,var], rel = map, weight = output[regionSubsetList[[region]],,varWeights[[var]]])
       }
     }
   }

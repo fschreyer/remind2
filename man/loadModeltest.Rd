@@ -20,9 +20,8 @@ modeltest run names.}
 }
 \description{
 The newest model tests are collected from the cluster and copied into a
-temporary folder (by default). Then the
-\link[=compareScenarios2]{compareScenarios2()} data loading procedure is used
-to load this data into the users environment.
+temporary folder (by default). Then the \link[=compareScenarios]{compareScenarios()}
+data loading procedure is used to load this data into the users environment.
 }
 \examples{
 \dontrun{

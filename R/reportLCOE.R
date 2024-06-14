@@ -47,6 +47,7 @@ reportLCOE <- function(gdx, output.type = "both"){
  vm_capFac <- readGDX(gdx, "vm_capFac", field = "l", restore_zeros = F)
  qm_balcapture  <- readGDX(gdx,"q_balcapture",field="m", restore_zeros = F)
  vm_co2CCS <- readGDX(gdx, "vm_co2CCS", field = "l", restore_zeros = F)
+ vm_co2capture <- readGDX(gdx, "vm_co2capture", field="l", restore_zeros = F)
  pm_emifac <- readGDX(gdx, "pm_emiFac", field = "l", restore_zeros = F)
  v32_storloss <- readGDX(gdx, "v32_storloss", field = "l")
 
@@ -113,7 +114,10 @@ reportLCOE <- function(gdx, output.type = "both"){
  teNoCCS   <- readGDX(gdx,"teNoCCS")
  techp     <- readGDX(gdx,c("teChp","techp"),format="first_found")
  teReNoBio <- readGDX(gdx,"teReNoBio")
+ teCDR     <- readGDX(gdx,"te_used33")
+ EW_name   <- "weathering" # necessary for backward compatibility
 
+ pc2te <- readGDX(gdx,"pc2te") # mapping of couple production & consumption
 
  ## parameter
  p_omeg  <- readGDX(gdx,c("pm_omeg","p_omeg"),format="first_found")
@@ -126,6 +130,10 @@ reportLCOE <- function(gdx, output.type = "both"){
  pm_dataeta <- readGDX(gdx,"pm_dataeta", restore_zeros=F)# efficiency of technologies with time-independent eta
  p47_taxCO2eq_AggFE <- readGDX(gdx,"p47_taxCO2eq_AggFE", restore_zeros=F, react = "silent")
 
+ pm_prodCouple <- readGDX(gdx, "pm_prodCouple", restore_zeros = F) # Second fuel production or demand per unit output of technology. Negative values mean own consumption, positive values mean coupled product.
+ pm_PEPrice <- readGDX(gdx, "pm_PEPrice", restore_zeros = F)
+ pm_SEPrice <- readGDX(gdx, "pm_SEPrice", restore_zeros = F)
+
  ## variables
  vm_costInvTeDir <- readGDX(gdx,name=c("vm_costInvTeDir","v_costInvTeDir","v_directteinv"),field="l",format="first_found")[,ttot,] ## Total direct Investment Cost in Timestep
  vm_costInvTeAdj <- readGDX(gdx,name=c("vm_costInvTeAdj","v_costInvTeAdj"),field="l",format="first_found")[,ttot,] ## total adjustment cost in period
@@ -136,7 +144,21 @@ reportLCOE <- function(gdx, output.type = "both"){
  vm_cap        <- readGDX(gdx,name=c("vm_cap"),field="l",format="first_found")
  vm_prodFe     <- readGDX(gdx,name=c("vm_prodFe"),field="l",restore_zeros=FALSE,format="first_found")
  v_emiTeDetail <- readGDX(gdx,name=c("vm_emiTeDetail","v_emiTeDetail"),field="l",restore_zeros=FALSE,format="first_found")
-
+ vm_emiIndCCS <- readGDX(gdx,name=c("vm_emiIndCCS","v_emiIndCCS"),field="l",restore_zeros=FALSE,format="first_found")
+ vm_emiCdrTeDetail <- readGDX(gdx, c("vm_emiCdrTeDetail","v33_emi"), field = "l", restore_zeros = F, react = "silent")[,ttot_from2005,teCDR]
+  if (is.null(vm_emiCdrTeDetail)) { # compatibility with the CDR module before the portfolio was added
+    # captured CO2 by DAC
+    v33_emiDAC <- readGDX(gdx, "v33_emiDAC", field = "l", restore_zeros = F, react = "silent")[, ttot_from2005, ]
+    if (!is.null(v33_emiDAC)){teCDR <- c(teCDR,"dac")}
+    # captured CO2 by Enhanced Weathering
+    v33_emiEW <- readGDX(gdx, "v33_emiEW", field = "l", restore_zeros = F, react = "silent")
+    if (!is.null(v33_emiEW)) {v33_emiEW <- add_columns(v33_emiEW, addnm=c("y2005","y2010","y2015","y2020"),dim=2,fill=0)[, ttot_from2005, ]
+                              EW_name <- intersect(c("rockgrind","weathering"),te)
+                              teCDR <- c(teCDR,EW_name)}
+    # variable used in the rest of the reporting
+    vm_emiCdrTeDetail <- mbind(v33_emiDAC, v33_emiEW)
+    vm_emiCdrTeDetail <- setNames(vm_emiCdrTeDetail, c("dac", EW_name))
+  }
 
  # module-specific
  # amount of curtailed electricity
@@ -148,12 +170,18 @@ reportLCOE <- function(gdx, output.type = "both"){
    v32_curt <- 0
    }
 
+  # dac FE demand
+  v33_FEdemand <- readGDX(gdx, name="v33_FEdemand", field="l",restore_zeros=FALSE,format="first_found")[,ttot_from2005,teCDR]
+  DAC_ccsdemand <- readGDX(gdx, name="vm_ccs_cdr", field="l",restore_zeros=FALSE,format="first_found")[,ttot_from2005,"ccsinje.1"]
+  v33_emi <- readGDX(gdx, name=c("v33_emi","vm_emiCdrTeDetail"), field="l",restore_zeros=FALSE,format="first_found")[,ttot_from2005,teCDR]
+  pm_FEPrice <- readGDX(gdx, "pm_FEPrice")[,ttot_from2005,"indst.ETS"]
+  fe2cdr <- readGDX(gdx, name="fe2cdr")
+  if(!is.null(fe2cdr)){fe2cdr <- fe2cdr %>% filter(all_te %in% teCDR)}
 
-
-
+  discount_rate <- 0.05
 
  # calculates annuity cost:
- # annuity cost = 1/ sum_t (p_omeg(t) / 1.06^t)  * direct investment cost
+ # annuity cost = 1/ sum_t (p_omeg(t) / (1+discount_rate)^t)  * direct investment cost
  # t is in T which is the lifetime of the technology
  # direct investment cost = directteinv or for past values (before 2005) (v_investcost * deltaCap)
  # annuity represents (total investment cost + interest over lifetime) distributed equally over all years of lifetime
@@ -168,7 +196,7 @@ reportLCOE <- function(gdx, output.type = "both"){
 
  te_annuity <- new.magpie("GLO",names=magclass::getNames(p_omeg,dim=2))
  for(a in magclass::getNames(p_omeg[reg1,,],dim=2)){
-  te_annuity[,,a] <- 1/dimSums(p_omeg[reg1,,a]/1.06**as.numeric(magclass::getNames(p_omeg[reg1,,a],dim=1)),dim=3.1)
+  te_annuity[,,a] <- 1/dimSums(p_omeg[reg1,,a]/(1+discount_rate)**as.numeric(magclass::getNames(p_omeg[reg1,,a],dim=1)),dim=3.1)
  }
 
  te_inv_annuity <- 1e+12 * te_annuity[,,te] *
@@ -244,22 +272,38 @@ reportLCOE <- function(gdx, output.type = "both"){
  te_annual_fuel_cost[,,pe2se$all_te] <- setNames(1e+12 * qm_pebal[,ttot_from2005,pe2se$all_enty] / qm_budget[,ttot_from2005,] *
            setNames(vm_demPe[,,pe2se$all_te], pe2se$all_enty), pe2se$all_te)
 
- # 2.2 second fuel cost - !only CCSinje for now! 
-    # pm_prodCouple: Second fuel production or demand per unit output of technology. Negative values mean own consumption, positive values mean coupled product. 
-      pm_prodCouple <- readGDX(gdx, "pm_prodCouple", restore_zeros = F)
-    # potential fuels and prices: not needed in this detail here, but copying approach in marginal section
-      fuels <- c("peoil","pegas","pecoal","peur", "pebiolc" , "pebios","pebioil",
-                 "seel","seliqbio", "seliqfos","seliqsyn", "sesobio","sesofos","seh2","segabio" ,
-                 "segafos","segasyn","sehe")
-      pm_PEPrice <- readGDX(gdx, "pm_PEPrice", restore_zeros = F) 
-      pm_SEPrice <- readGDX(gdx, "pm_SEPrice", restore_zeros = F)
-      Fuel.Price <- mbind(pm_PEPrice,pm_SEPrice )[,,fuels]*1e12 # convert from trUSD2005/TWa to USD2005/TWa [note: this already includes the CO2 price]
+ # 2.2 secondary fuel cost
+ Fuel.Price <- mbind(pm_PEPrice,pm_SEPrice )[,,]*1e12 # convert from trUSD2005/TWa to USD2005/TWa [note: this already includes the CO2 price]
+ Fuel.Price <- matchRegions(Fuel.Price, vm_prodSe, fill = 0)
 
-    # calculate secondary Fuel cost for ccsinje 
-      te_annual_secFuel_cost <- new.magpie(getRegions(te_inv_annuity),ttot_from2005, "ccsinje" , fill=0)  
-      te_annual_secFuel_cost[,,"ccsinje"] <- setNames(-pm_prodCouple[,,"ccsinje"] * Fuel.Price[,,"seel"] * vm_co2CCS[,,"ccsinje.1"], "ccsinje") 
-          # units: -1 (so pm_prodCouple turns positive because consuming energy) * electricity demand (pm_prodCouple, TWa/GtC)
-          #           * electricity price (Fuel.Price, USD2005/TWa) * amount of CO2 captured (vm_co2CCS, GtC) = te_annual_secFuel_cost = [USD2005]
+ pm_SecFuel <- pm_prodCouple[,,getNames(pm_prodCouple)[pm_prodCouple[reg1,,]<0]] # keep only second fuel consumption, not co-production
+ SecFuelTechs <- intersect(getNames(pm_SecFuel, dim = 3), pc2te$all_te) # determine all te that have couple production
+ SecFuelTechs_pe2se <- intersect(SecFuelTechs, pe2se$all_te)
+ otherSecFuelTechs <- setdiff(SecFuelTechs, pe2se$all_te) # note: tdbiogas and tdfosgas are currently not being reported in the average LCOE, and are thus ignored below
+
+ te_annual_secFuel_cost <- new.magpie(getRegions(te_inv_annuity),ttot_from2005, getNames(te_inv_annuity) , fill=0)
+  # calculate secondary fuel cost for pe2se
+    te_annual_secFuel_cost[,,SecFuelTechs_pe2se] <- setNames(dimSums(-pm_SecFuel[,,SecFuelTechs_pe2se] * Fuel.Price[,ttot_from2005, getNames(pm_SecFuel, dim = 4)] *
+                                                            vm_prodSe[,ttot_from2005,SecFuelTechs_pe2se], dim=3.4) , SecFuelTechs_pe2se)
+  # calculate secondary fuel cost for ccsinje
+     te_annual_secFuel_cost[,,"ccsinje"] <- setNames(-pm_SecFuel[,,"ccsinje"] * Fuel.Price[,,"seel"] * vm_co2CCS[,,"ccsinje.1"], "ccsinje")
+  # calculation explanation:
+          # units: -1 (so pm_SecFuel turns positive because consuming energy)
+          # * electricity or heat demand (pm_SecFuel, TWa_input/TWa_mainOutput OR TWa/GtC)
+          # * electricity price (Fuel.Price, USD2005/TWa_inpu)
+          # * main Output (for pe2se: vm_prodSe (TWa_mainOutput); for ccsinje: amount of CO2 captured (vm_co2CCS, GtC))
+          # = te_annual_secFuel_cost = [USD2005]
+
+# 2.3 additional fuel demand of CDR module technologies
+  te_annual_otherFuel_cost <- new.magpie(getRegions(te_inv_annuity),ttot_from2005,getNames(te_inv_annuity), fill=0)
+  if (length(teCDR)>0 & !is.null(v33_FEdemand) ){  # i.e. this is only computed for remind post refactoring of cdr module (Nov 2024)
+  for (te in teCDR){
+    te_annual_otherFuel_cost[,ttot_from2005,te] <- setNames(dimSums(
+      1e+12 * setNames(pm_FEPrice[,,unique(fe2cdr$all_enty)], unique(fe2cdr$all_enty)) *
+        setNames(dimSums(v33_FEdemand[,,te],dim=3.2), unique(getNames(v33_FEdemand[,,te],dim=1)))),
+    te)}
+  }
+  # calculation explanation: 10^12 USD/TrnUSD * pm_FEPrice(TrnUSD/TWa) * FEdemand(TWa) = USD
 
  # 3. sub-part: OMV cost ----
 
@@ -334,14 +378,29 @@ reportLCOE <- function(gdx, output.type = "both"){
  # (annual ccsinje investment + annual ccsinje omf) * captured co2 (tech) / total captured co2 of all tech
 
  te_annual_ccsInj_cost <- new.magpie(getRegions(te_inv_annuity),ttot_from2005,getNames(te_inv_annuity), fill=0)
+ te_annual_ccsInj_inclAdjCost <- new.magpie(getRegions(te_inv_annuity),ttot_from2005,getNames(te_inv_annuity), fill=0)
+
 
  # calculate total ccsinjection cost for all techs
  total_ccsInj_cost <- dimReduce(te_annual_inv_cost[getRegions(te_annual_OMF_cost),getYears(te_annual_OMF_cost),"ccsinje"] +
                                                      te_annual_OMF_cost[,,"ccsinje"] + te_annual_secFuel_cost[,,"ccsinje"])
+
+ total_ccsInj_inclAdjCost <- dimReduce(te_annual_inv_cost_wadj[getRegions(te_annual_OMF_cost),getYears(te_annual_OMF_cost),"ccsinje"] +
+                                        te_annual_OMF_cost[,,"ccsinje"] +
+                                         te_annual_secFuel_cost[,,"ccsinje"])
+  # all captured co2 by tech: pe2se and cdr and industry
+  cco2_byTech <-  mbind(dimSums(v_emiTeDetail[,,"cco2"][,ttot_from2005,teCCS], dim = c(3.1,3.2,3.4), na.rm = T),
+                        setNames(DAC_ccsdemand,"dac"), vm_emiIndCCS[,ttot_from2005,])
+  cco2Techs <- intersect(getNames(cco2_byTech),getNames(te_inv_annuity))
+
+
  # distribute ccs injection cost over techs
- te_annual_ccsInj_cost[,,teCCS] <- setNames(total_ccsInj_cost * dimSums(v_emiTeDetail[,,"cco2"][,,teCCS], dim = c(3.1,3.2,3.4), na.rm = T) /
-                                                                dimSums( v_emiTeDetail[,,"cco2"], dim = 3, na.rm = T),
-                                                                teCCS)
+ te_annual_ccsInj_cost[,,cco2Techs] <- setNames(total_ccsInj_cost * cco2_byTech[,,cco2Techs] / vm_co2capture,
+                                                cco2Techs)
+ te_annual_ccsInj_inclAdjCost[,,cco2Techs] <- setNames(total_ccsInj_inclAdjCost * cco2_byTech[,,cco2Techs]/vm_co2capture,
+                                                       cco2Techs)
+
+
 
  # 8. sub-part: co2 cost ----
 
@@ -402,8 +461,51 @@ reportLCOE <- function(gdx, output.type = "both"){
    te_annual_ccsInj_cost +
    te_annual_co2_cost
 
- ####### 10. sub-part: calculate total energy production and carbon storage #################################
- # SE and FE production in MWh
+###### 10. sub-part: Additional Enhanced Weathering data & calculations
+ if(EW_name %in% teCDR){
+  # read amount of rock spread
+   v33_EW_onfield <- readGDX(gdx,c("v33_EW_onfield","v33_grindrock_onfield"), restore_zeros = F,field="l",format="first_found")[,ttot_from2005,]
+   v33_EW_onfield_sum <- dimSums(v33_EW_onfield,dim=3)
+
+  # EW-specific fixed OM cost are given by vm_omcosts_cdr. This cumulates a) completely fixed cost for mining, grinding and spreading; and b) fixed transportation cost that depend on the distance grade.
+  # To allow interpretation of the LC, separate these cost components.
+   te_annual_addOM_cost  <- 10^12 * setNames(readGDX(gdx,"vm_omcosts_cdr",restore_zeros = F,field="l",format="first_found"),EW_name)
+   s33_costs_fix <- readGDX(gdx,"s33_costs_fix")
+   p33_EW_transport_costs <- readGDX(gdx,c("p33_EW_transport_costs","p33_transport_costs"),format="first_found")
+
+   EW_fixed_other_cost <- 10^12 * s33_costs_fix * v33_EW_onfield_sum
+   EW_fixed_transport_cost <-  10^12 *  dimSums(p33_EW_transport_costs[,,getNames(v33_EW_onfield)] * v33_EW_onfield)
+  }
+
+####### 11. sub-part: calculate total energy production and carbon storage  #################################
+ # a) production volumes to divide by:
+  # for LCO-ccsinje: change unit of stored CO2 from GtC to tCO2
+ vm_co2CCS_tCO2 <- vm_co2CCS*s_GtC2tCO2
+
+  # for LCO-cc: calculate captured CO2 to calculate cost per tCO2
+ cco2_byTech_tCO2 <-  cco2_byTech*s_GtC2tCO2
+ cco2_byTech_tCO2[cco2_byTech_tCO2 < 1000] <- NA   # set to NA if very small (<1000tCO2/yr) to avoid very large cost parts & weird plots
+
+ te_cco2 <- intersect(getNames(cco2_byTech_tCO2),getNames(te_inv_annuity)) # Technologies that capture co2 to enter ccus system, no matter which source
+
+  # for LCO-sc: calculate stored CO2 to calculate cost per tCO2
+  cdrco2_byTech_tCO2 <- vm_emiCdrTeDetail[,,setdiff(teCDR,te_cco2)]*s_GtC2tCO2*-1 # will become relevant when biochar included
+
+  # enhanced weathering:
+  if (EW_name %in% teCDR){
+      # The calculation of cost is associated with the spreading of rocks in a time step. However, the removal induced thereby is spread across time steps.
+      # Thus, we need to calculate the total removal induced through spreading a given amount of rock as reference value for the cost incurred in that time step.
+      s33_co2_rem_pot <- readGDX(gdx, "s33_co2_rem_pot")
+      EW_induced_in_tCO2 <- dimSums(v33_EW_onfield*s33_co2_rem_pot * s_GtC2tCO2, dim=3) # here grades do not matter because the overall removal depends on the type of stone and not grade
+                                      # [Gt stone] * [GtC/GtStone] * [tCO2/GtC]
+      EW_induced_in_tCO2[EW_induced_in_tCO2==0] <- NA # set NA to avoid infinite investment cost for the standing system when regions do not spread EW in time steps after initial investment was taken
+      cdrco2_byTech_tCO2[,,EW_name] <- EW_induced_in_tCO2[,ttot_from2005,]
+      # Note that there is an alternative way to allocate the cost which may be added in the future.
+  }
+
+  te_sco2 <- getNames(cdrco2_byTech_tCO2)
+
+ # for pe2se: SE and FE production in MWh
  total_te_energy <- new.magpie(getRegions(vm_prodSe),getYears(vm_prodSe),
                                c(magclass::getNames(collapseNames(vm_prodSe[temapse],collapsedim = c(1,2))),
                                  magclass::getNames(collapseNames(vm_prodFe[se2fe],collapsedim = c(1,2)))))
@@ -414,18 +516,15 @@ reportLCOE <- function(gdx, output.type = "both"){
  # this avoids very large or infinite cost parts and weird plots
  total_te_energy[total_te_energy < 100] <- NA
 
-
- # calculate curtailment cost
+ # b) calculate curtailment cost & total energy production after curtailment
  te_curt_cost[,,teVRE] <- te_annual_total_cost_noCurt[,,teVRE] / (total_te_energy[,,teVRE] * (1-curt_share[,,teVRE])) -
                                           te_annual_total_cost_noCurt[,,teVRE] / total_te_energy[,,teVRE]
-
 
  # calculate total energy production after curtailment
  total_te_energy_usable <- total_te_energy
  total_te_energy_usable[,,teVRE] <- total_te_energy[,,teVRE] - v32_storloss[,ttot_from2005,teVRE]*s_twa2mwh
 
- # change unit of stored CO2 from GtC to tCO2
- vm_co2CCS_tCO2 <- vm_co2CCS*s_GtC2tCO2
+
 
  ####################################################
  ######### calculate average LCOE  ##################
@@ -433,12 +532,15 @@ reportLCOE <- function(gdx, output.type = "both"){
  LCOE.avg <- NULL
 
 # calculate standing system LCOE
-# divide total cost of standing system in that time step by total generation (before curtailment) in that time step
-# exceptions: - grid and storage cost are calculated by dividing by generation after curtailment
-#             - carbon storage cost are calculated by dividing by tons of CO2 that are stored
+# - for pe2se: divide total cost of standing system in that time step by total generation (before curtailment) in that time step
+#              exception: grid and storage cost are calculated by dividing by generation after curtailment
+# - carbon transport & storage: cost are calculated by dividing by tons of CO2 that are stored
+# - technologies capturing carbon: total cost are  divided by tons of CO2 captured.
+#               Adding cost for stored carbon, this yields full CCS or CDR cost (depending on source of C)
 # convert from USD2005/MWh (or tCO2) to USD2015/MWh (or tCO2) (*1.2)
  LCOE.avg <- mbind(
-              #### Energy technologies (pe2se$all_te)
+      #### Energy technologies (pe2se$all_te)
+          ### production cost components
               setNames(te_annual_inv_cost[,ttot_from2005,pe2se$all_te]/
                          total_te_energy[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te,"|supply-side", "|Investment Cost")),
@@ -447,39 +549,129 @@ reportLCOE <- function(gdx, output.type = "both"){
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te,"|supply-side", "|Investment Cost w/ Adj Cost")),
               setNames(te_annual_fuel_cost[,,pe2se$all_te]/total_te_energy[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te,"|supply-side", "|Fuel Cost")),
+              setNames(te_annual_secFuel_cost[,,pe2se$all_te]/total_te_energy[,,pe2se$all_te],
+                       paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te,"|supply-side", "|Second Fuel Cost")),
               setNames(te_annual_OMF_cost[,,pe2se$all_te]/total_te_energy[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|OMF Cost")),
               setNames(te_annual_OMV_cost[,,pe2se$all_te]/total_te_energy[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|OMV Cost")),
-              ### calculate VRE grid and storage cost by dividing by usable generation (after generation)
+          ### calculate VRE grid and storage cost by dividing by usable generation (after generation)
               setNames(te_annual_stor_cost[,,pe2se$all_te]/total_te_energy_usable[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|Storage Cost")),
               setNames(te_annual_grid_cost[,,pe2se$all_te]/total_te_energy_usable[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|Grid Cost")),
-              ### calculate VRE grid and storage cost (with adjustment costs) by dividing by usable generation (after generation)
+          ### calculate VRE grid and storage cost (with adjustment costs) by dividing by usable generation (after generation)
               setNames(te_annual_stor_cost_wadj[,,pe2se$all_te]/total_te_energy_usable[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|Storage Cost w/ Adj Cost")),
               setNames(te_annual_grid_cost_wadj[,,pe2se$all_te]/total_te_energy_usable[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|Grid Cost w/ Adj Cost")),
-              ###
+          ### add cost for carbon storage and for carbon emissions
               setNames(te_annual_ccsInj_cost[,,pe2se$all_te]/total_te_energy[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|CCS Cost")),
+              setNames(te_annual_ccsInj_inclAdjCost[,,pe2se$all_te]/total_te_energy[,,pe2se$all_te],
+                       paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|CCS Cost w/ Adj Cost")),
               setNames(te_annual_co2_cost[,,pe2se$all_te]/total_te_energy[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|CO2 Cost")),
+          ### add curtailment cost
               setNames(te_curt_cost[,,pe2se$all_te],
                        paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|Curtailment Cost")),
-              #### Carbon Transport and storage ("ccsinje")
+          ### Total Cost
+              setNames((te_annual_inv_cost[,ttot_from2005,pe2se$all_te]+ te_annual_fuel_cost[,,pe2se$all_te] + te_annual_secFuel_cost[,,pe2se$all_te] + te_annual_OMF_cost[,,pe2se$all_te] +
+                             te_annual_OMV_cost[,,pe2se$all_te] + te_annual_ccsInj_cost[,,pe2se$all_te] + te_annual_co2_cost[,,pe2se$all_te])/total_te_energy[,,pe2se$all_te] +
+                       (te_annual_stor_cost[,,pe2se$all_te] + te_annual_grid_cost[,,pe2se$all_te]) / total_te_energy_usable[,,pe2se$all_te] + te_curt_cost[,,pe2se$all_te],
+                       paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|Total Cost")),
+              setNames((te_annual_inv_cost_wadj[,ttot_from2005,pe2se$all_te]+ te_annual_fuel_cost[,,pe2se$all_te] + te_annual_secFuel_cost[,,pe2se$all_te] + te_annual_OMF_cost[,,pe2se$all_te] +
+                             te_annual_OMV_cost[,,pe2se$all_te] + te_annual_ccsInj_inclAdjCost[,,pe2se$all_te] + te_annual_co2_cost[,,pe2se$all_te])/total_te_energy[,,pe2se$all_te] +
+                       (te_annual_stor_cost_wadj[,,pe2se$all_te] + te_annual_grid_cost_wadj[,,pe2se$all_te]) / total_te_energy_usable[,,pe2se$all_te] + te_curt_cost[,,pe2se$all_te],
+                       paste0("LCOE|average|",pe2se$all_enty1,"|",pe2se$all_te, "|supply-side","|Total Cost w/ Adj Cost")),
+      #### Carbon Transport and storage ("ccsinje")
               setNames(te_annual_inv_cost[,ttot_from2005,"ccsinje"]/
                          vm_co2CCS_tCO2[,,"ccsinje.1"],
-                       paste0("LCOCS|average|","injectedCO2|","ccsinje","|supply-side", "|Investment Cost")),
+                       paste0("LCOCS|average|","ico2|","ccsinje","|carbon management", "|Investment Cost")),
               setNames(te_annual_inv_cost_wadj[,ttot_from2005,"ccsinje"]/
                          vm_co2CCS_tCO2[,,"ccsinje.1"],
-                       paste0("LCOCS|average|","injectedCO2|","ccsinje","|supply-side", "|Investment Cost w/ Adj Cost")),
+                       paste0("LCOCS|average|","ico2|","ccsinje","|carbon management", "|Investment Cost w/ Adj Cost")),
               setNames(te_annual_OMF_cost[,,"ccsinje"]/vm_co2CCS_tCO2[,,"ccsinje.1"],
-                       paste0("LCOCS|average|","injectedCO2|","ccsinje", "|supply-side","|OMF Cost")),
+                       paste0("LCOCS|average|","ico2|","ccsinje", "|carbon management","|OMF Cost")),
               setNames(te_annual_secFuel_cost[,,"ccsinje"]/vm_co2CCS_tCO2[,,"ccsinje.1"],
-                       paste0("LCOCS|average|","injectedCO2|","ccsinje", "|supply-side","|Second Fuel Cost"))
-)*1.2
+                       paste0("LCOCS|average|","ico2|","ccsinje", "|carbon management","|Second Fuel Cost")),
+              setNames((te_annual_inv_cost[,ttot_from2005,"ccsinje"]+te_annual_OMF_cost[,,"ccsinje"]+te_annual_secFuel_cost[,,"ccsinje"])/vm_co2CCS_tCO2[,,"ccsinje.1"],
+                       paste0("LCOCS|average|","ico2|","ccsinje", "|carbon management","|Total Cost")),
+              setNames((te_annual_inv_cost_wadj[,ttot_from2005,"ccsinje"]+te_annual_OMF_cost[,,"ccsinje"]+te_annual_secFuel_cost[,,"ccsinje"])/vm_co2CCS_tCO2[,,"ccsinje.1"],
+                       paste0("LCOCS|average|","ico2|","ccsinje", "|carbon management","|Total Cost w/ Adj Cost")),
+      #### Carbon Management Technologies
+          ### main cost
+               setNames(te_annual_inv_cost[,ttot_from2005,te_cco2]/
+                         cco2_byTech_tCO2[,ttot_from2005,te_cco2] ,
+                       paste0("LCOCC|average|","cco2|",te_cco2,"|carbon management", "|Investment Cost")),
+              setNames(te_annual_inv_cost_wadj[,ttot_from2005,te_cco2]/
+                         cco2_byTech_tCO2[,ttot_from2005,te_cco2] ,
+                       paste0("LCOCC|average|","cco2|",te_cco2,"|carbon management", "|Investment Cost w/ Adj Cost")),
+              setNames(te_annual_fuel_cost[,,te_cco2]/cco2_byTech_tCO2[,ttot_from2005,te_cco2],
+                       paste0("LCOCC|average|","cco2|",te_cco2, "|carbon management","|Fuel Cost")),
+              setNames(te_annual_secFuel_cost[,,te_cco2]/cco2_byTech_tCO2[,ttot_from2005,te_cco2],
+                       paste0("LCOCC|average|","cco2|",te_cco2, "|carbon management","|Second Fuel Cost")),
+              setNames(te_annual_otherFuel_cost[,,te_cco2]/cco2_byTech_tCO2[,ttot_from2005,te_cco2],
+                       paste0("LCOCC|average|","cco2|",te_cco2, "|carbon management","|Other Fuel Cost")),
+              setNames(te_annual_OMF_cost[,,te_cco2]/cco2_byTech_tCO2[,ttot_from2005,te_cco2],
+                       paste0("LCOCC|average|","cco2|",te_cco2, "|carbon management","|OMF Cost")),
+              setNames(te_annual_OMV_cost[,,te_cco2]/cco2_byTech_tCO2[,ttot_from2005,te_cco2],
+                       paste0("LCOCC|average|","cco2|",te_cco2, "|carbon management","|OMV Cost")),
+          ### cost of storage / amount of the total captured that is stored
+              setNames(te_annual_ccsInj_cost[,ttot_from2005,cco2Techs]/
+                         (cco2_byTech_tCO2[,ttot_from2005,cco2Techs] * dimSums(vm_co2CCS/vm_co2capture)),
+                       paste0("LCOCC|average|","ico2|", cco2Techs, "|carbon management","|CCS Cost")),
+              setNames(te_annual_ccsInj_inclAdjCost[,ttot_from2005,cco2Techs]/
+                         (cco2_byTech_tCO2[,ttot_from2005,cco2Techs] * dimSums(vm_co2CCS/vm_co2capture)),
+                       paste0("LCOCC|average|","ico2|", cco2Techs, "|carbon management","|CCS Cost w/ Adj Cost")),
+          ### total cost for capturing co2
+          setNames((te_annual_inv_cost[,ttot_from2005,te_cco2] + te_annual_OMF_cost[,,te_cco2] + te_annual_OMV_cost[,,te_cco2] +
+                      te_annual_fuel_cost[,,te_cco2] + te_annual_secFuel_cost[,,te_cco2] + te_annual_otherFuel_cost[,,te_cco2])/ cco2_byTech_tCO2[,ttot_from2005,te_cco2] ,
+                       paste0("LCOCC|average|","cco2|",te_cco2,"|carbon management", "|Total Cost")),
+          setNames((te_annual_inv_cost_wadj[,ttot_from2005,te_cco2] + te_annual_OMF_cost[,,te_cco2] + te_annual_OMV_cost[,,te_cco2] +
+                      te_annual_fuel_cost[,,te_cco2]+ te_annual_secFuel_cost[,,te_cco2] + te_annual_otherFuel_cost[,,te_cco2]) / cco2_byTech_tCO2[,ttot_from2005,te_cco2] ,
+                       paste0("LCOCC|average|","cco2|",te_cco2,"|carbon management", "|Total Cost w/ Adj Cost")),
+          ### total cost for injecting co2.
+          setNames((te_annual_inv_cost[,ttot_from2005,te_cco2] + te_annual_OMF_cost[,,te_cco2] + te_annual_OMV_cost[,,te_cco2] +
+                      te_annual_fuel_cost[,,te_cco2]+ te_annual_secFuel_cost[,,te_cco2] + te_annual_otherFuel_cost[,,te_cco2]) / cco2_byTech_tCO2[,ttot_from2005,te_cco2] +
+                      te_annual_ccsInj_cost[,ttot_from2005,cco2Techs]/ (cco2_byTech_tCO2[,ttot_from2005,cco2Techs] * dimSums(vm_co2CCS/vm_co2capture)) ,
+                       paste0("LCOCCS|average|","ico2|",te_cco2,"|carbon management", "|Total Cost")),
+          setNames((te_annual_inv_cost_wadj[,ttot_from2005,te_cco2] + te_annual_OMF_cost[,,te_cco2] + te_annual_OMV_cost[,,te_cco2] +
+                      te_annual_fuel_cost[,,te_cco2] + te_annual_secFuel_cost[,,te_cco2] + te_annual_otherFuel_cost[,,te_cco2]) / cco2_byTech_tCO2[,ttot_from2005,te_cco2] +
+                      te_annual_ccsInj_inclAdjCost[,ttot_from2005,cco2Techs]/ (cco2_byTech_tCO2[,ttot_from2005,cco2Techs] * dimSums(vm_co2CCS/vm_co2capture)) ,
+                       paste0("LCOCCS|average|","ico2|",te_cco2,"|carbon management", "|Total Cost w/ Adj Cost")),
+      #### Carbon storing Technologies (other than CCUS chain; for now only if EW included, will include biochar in future)
+          if (EW_name %in% teCDR){mbind(
+          ## calculation based on removal initiated in t
+              setNames(te_annual_inv_cost[,ttot_from2005,te_sco2]/cdrco2_byTech_tCO2[,ttot_from2005,te_sco2],
+                       paste0("LCOCS|average|","sco2|",te_sco2,"|carbon management", "|Investment Cost")),
+              setNames(te_annual_inv_cost_wadj[,ttot_from2005,te_sco2]/cdrco2_byTech_tCO2[,ttot_from2005,te_sco2],
+                       paste0("LCOCS|average|","sco2|",te_sco2,"|carbon management", "|Investment Cost w/ Adj Cost")),
+              setNames(te_annual_fuel_cost[,,te_sco2]/cdrco2_byTech_tCO2[,ttot_from2005,te_sco2],
+                       paste0("LCOCS|average|","sco2|",te_sco2, "|carbon management","|Fuel Cost")),
+              setNames(te_annual_secFuel_cost[,,te_sco2]/cdrco2_byTech_tCO2[,ttot_from2005,te_sco2],
+                       paste0("LCOCS|average|","sco2|",te_sco2, "|carbon management","|Second Fuel Cost")),
+              setNames(te_annual_otherFuel_cost[,,te_sco2]/cdrco2_byTech_tCO2[,ttot_from2005,te_sco2],
+                       paste0("LCOCC|average|","sco2|",te_sco2, "|carbon management","|Other Fuel Cost")),
+              setNames(te_annual_OMF_cost[,,te_sco2]/cdrco2_byTech_tCO2[,ttot_from2005,te_sco2],
+                       paste0("LCOCS|average|","sco2|",te_sco2, "|carbon management","|OMF Cost")),
+              setNames(te_annual_OMV_cost[,,te_sco2]/cdrco2_byTech_tCO2[,ttot_from2005,te_sco2],
+                       paste0("LCOCS|average|","sco2|",te_sco2, "|carbon management","|OMV Cost")),
+              # specific to enhanced weathering
+              setNames(EW_fixed_other_cost[,,]/cdrco2_byTech_tCO2[,ttot_from2005,EW_name],
+                       paste0("LCOCS|average|","sco2|",EW_name, "|carbon management","|OMF other Cost")),
+              setNames(EW_fixed_transport_cost/cdrco2_byTech_tCO2[,ttot_from2005,EW_name],
+                       paste0("LCOCS|average|","sco2|",EW_name, "|carbon management","|OMF transport Cost")),
+              # sum for enhanced weathering (incl. special om cost)
+              setNames((te_annual_inv_cost[,ttot_from2005,EW_name] +  te_annual_OMF_cost[,,EW_name] + te_annual_otherFuel_cost[,,EW_name] + EW_fixed_other_cost +
+                        EW_fixed_transport_cost) / cdrco2_byTech_tCO2[,ttot_from2005,EW_name] ,
+                       paste0("LCOCS|average|","sco2|",EW_name,"|carbon management", "|Total Cost")),
+              setNames((te_annual_inv_cost_wadj[,ttot_from2005,EW_name] + te_annual_otherFuel_cost[,,EW_name] + EW_fixed_other_cost +
+                        EW_fixed_transport_cost ) / cdrco2_byTech_tCO2[,ttot_from2005,EW_name],
+                       paste0("LCOCS|average|","sco2|",EW_name,"|carbon management", "|Total Cost w/ Adj Cost"))
+                       )}
+          else {NULL}
+ )*1.2
 
  # convert to better dimensional format
  df.lcoe.avg <- as.quitte(LCOE.avg) %>%
@@ -505,8 +697,8 @@ reportLCOE <- function(gdx, output.type = "both"){
  df.lcoe.avg$cost <- sapply(df.lcoe.avg$cost, "[[", 6)
 
  df.lcoe.avg <- df.lcoe.avg %>%
-                  mutate( unit = "US$2015/MWh") %>% 
-                  mutate(unit = case_when(tech=="ccsinje" & output=="cco2_stored" ~ "US$2015/tCO2", TRUE ~ unit)) %>%
+                  mutate( unit = "US$2015/MWh") %>%
+                  mutate(unit = case_when(output=="ico2"|output=="cco2"|output=="sco2" ~ "US$2015/tCO2", TRUE ~ unit)) %>%
                   select(region, period, type, output, tech, sector, unit, cost, value)
 
  # reconvert to magpie object
@@ -1011,6 +1203,8 @@ df.co2price.weighted <- df.pomeg.expand %>%
     # set NA to 0 in marginal adjustment cost
     o_margAdjCostInv[is.na(o_margAdjCostInv)] <- 0
 
+    # modify Fuel.Price magclass object if regions inconsistent with p33_fedem
+    Fuel.Price <- matchRegions(Fuel.Price, p33_fedem, fill = 0)
     # capital cost in trUSD2005/GtC -> convert to USD2015/tCO2
     LCOD[,,"Investment Cost"] <- vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"] * p_teAnnuity[,,"dac"]*1e3
     if ("dac" %in% getNames(o_margAdjCostInv)) {

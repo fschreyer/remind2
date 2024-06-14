@@ -4,6 +4,7 @@
 \name{reexports}
 \alias{reexports}
 \alias{deletePlus}
+\alias{getCs2Profiles}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -11,6 +12,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
+  \item{piamPlotComparison}{\code{\link[piamPlotComparison]{getCs2Profiles}}}
+
   \item{piamutils}{\code{\link[piamutils]{deletePlus}}}
 }}
 

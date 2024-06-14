@@ -11,6 +11,7 @@ getProjectPath <- function(project = "remind") {
 
 
 #' @importFrom dplyr bind_cols
+#' @importFrom rlang .env
 getNewsestModeltests <- function(namePattern, requireMif) {
 
   modeltestOutPath <- file.path(getProjectPath(), "modeltests", "remind", "output")
@@ -45,13 +46,13 @@ getNewsestModeltests <- function(namePattern, requireMif) {
 }
 
 
-#' Load compareScenarios2 Data
+#' Load compareScenarios Data
 #'
-#' Load data from mif files into R-objects as used in \link[=compareScenarios2]{compareScenarios2()}.
+#' Load data from mif files into R-objects as used in \link[=compareScenarios]{compareScenarios()}.
 #'
-#' @param cfgScen,cfgDefault See section "YAML Parameters" in \link[=compareScenarios2]{compareScenarios2()}.
+#' @param cfgScen,cfgDefault See section "YAML Parameters" in \link[=compareScenarios]{compareScenarios()}.
 #' @param envir \code{environment}. The environment where the loaded data is put into.
-#' @inheritParams compareScenarios2
+#' @inheritParams piamPlotComparison::compareScenarios
 #' @examples
 #' \dontrun{
 #' loadCs2Data(
@@ -69,7 +70,8 @@ loadCs2Data <- function(
 
   folder <- tempdir()
   outputFile <- format(Sys.time(), "cs2_%Y%m%d-%H%M%S")
-  compareScenarios2(
+  piamPlotComparison::compareScenarios(
+    projectLibrary = "remind2",
     mifScen = mifScen,
     mifHist = mifHist,
     cfgScen = cfgScen,
@@ -101,9 +103,8 @@ cs2InputPaths <- function(outputDirs) {
 #' Load Modeltest Results
 #'
 #' The newest model tests are collected from the cluster and copied into a
-#' temporary folder (by default). Then the
-#' \link[=compareScenarios2]{compareScenarios2()} data loading procedure is used
-#' to load this data into the users environment.
+#' temporary folder (by default). Then the \link[=compareScenarios]{compareScenarios()}
+#' data loading procedure is used to load this data into the users environment.
 #'
 #' @param namePattern \code{character(1)}. A regular expression to filter the
 #'   modeltest run names.

@@ -21,6 +21,7 @@
 #' @export
 #' @importFrom gdx readGDX
 #' @importFrom magclass setNames mbind getYears new.magpie getRegions setYears
+#' @importFrom madrat toolAggregate
 
 reportMacroEconomy <- function(gdx, regionSubsetList = NULL,
                                t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150)) {
@@ -368,7 +369,7 @@ reportMacroEconomy <- function(gdx, regionSubsetList = NULL,
 
   # calculate global aggregation for the damage factor, weighted by MER GDP
   mapping <- data.frame(region=getRegions(out),world="GLO",stringsAsFactors=FALSE)
-  glo_damageFactor <- speed_aggregate(damageFactor[,tintersect,], mapping, weight = gdp[,tintersect,])
+  glo_damageFactor <- toolAggregate(damageFactor[,tintersect,], rel = mapping, weight = gdp[,tintersect,])
 
   # add global region aggregation
   out <- mbind(out, dimSums(out, dim = 1))

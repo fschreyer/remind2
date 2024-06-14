@@ -31,7 +31,7 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
                         t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150),
                         gdx_refpolicycost = gdx_ref, testthat = FALSE) {
 
-  # Define region subsets
+  # Define region subsets ----
   regionSubsetList <- toolRegionSubsets(gdx)
   # ADD EU-27 region aggregation if possible
   if("EUR" %in% names(regionSubsetList)){
@@ -40,7 +40,7 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
     ))
   }
 
-  # make the reporting
+  # main reporting ----
   output <- NULL
 
   message("running reportMacroEconomy...")
@@ -82,12 +82,12 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
   message("running reportTax...")
   output <- mbind(output,reportTax(gdx,output,regionSubsetList,t)[,t,])
 
-  # reporting of cross variables ----
+  # cross variables ----
   # needs variables from different other report* functions
   message("running reportCrossVariables...")
   output <- mbind(output,reportCrossVariables(gdx,output,regionSubsetList,t)[,t,])
 
-  # Report policy costs, if possible and sensible
+  # policy costs, if possible and sensible ----
   if (is.null(gdx_refpolicycost)) {
     gdx_refpolicycost <- gdx
   }
@@ -117,7 +117,7 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
             "If a policy costs reporting is desired, please use the 'policyCosts' output.R script."))
   }
 
-  # reporting of SDP variables
+  # SDP variables ----
   message("running reportSDPVariables...")
   tmp <- try(reportSDPVariables(gdx,output,t))  # test whether reportSDPVariables works
   if (!inherits(tmp, "try-error")) {
@@ -126,13 +126,20 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
     message("function reportSDPVariables does not work and is skipped")
   }
 
+  # climate assessment variables ----
+  message("running reportClimate...")
+  output <- mbind(output, reportClimate(gdx, output))
+
+  # clean and test output ----
   # Add dimension names "scenario.model.variable"
   getSets(output)[3] <- "variable"
   output <- add_dimension(output,dim=3.1,add = "model",nm = "REMIND")
   output <- add_dimension(output,dim=3.1,add = "scenario",nm = scenario)
 
+  ## check variable names ----
   checkVarNames(getNames(output, dim = 3))
 
+  ## summation checks ----
   .reportSummationErrors <- function(msg, testthat) {
     if (!any(grepl('All summation checks were fine', msg))) {
       msgtext <- paste(msg, collapse = '\n')
@@ -161,7 +168,17 @@ convGDX2MIF <- function(gdx, gdx_ref = NULL, file = NULL, scenario = "default",
   ) %>%
     .reportSummationErrors(testthat = testthat)
 
-  # either write the *.mif or return the magpie object
+  ## range checks ----
+  test_ranges(
+        data = output,
+        tests = list(
+          list(
+            "^Emi\\|CO2\\|Energy\\|Demand\\|Industry\\|.*Fossil \\(Mt CO2/yr\\)$",
+            low = 0),
+          list("Share.*\\((%|Percent)\\)$", low = 0, up = 100)),
+        reaction = 'warning')
+
+  # write or return output ----
   if (!is.null(file)) {
     write.report(output, file = file, ndigit = 7)
     # write same reporting without "+" or "++" in variable names

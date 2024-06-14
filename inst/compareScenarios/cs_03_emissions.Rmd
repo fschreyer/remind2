@@ -135,25 +135,8 @@ showLinePlots(data, items)
 ### Electricity and Heat
 
 ```{r CO2 Electricity and Heat}
-# UNFCCC has "EMI|CO2|Energy|Demand|Electricity and Heat",
-# CEDS and REMIND only separate
-# manually added for now
-# TODO: move to mrremind!
-
 item <- "Emi|CO2|Energy|Supply|Electricity and Heat"
-summands <- c(
-  "Emi|CO2|Energy|Supply|Electricity",
-  "Emi|CO2|Energy|Supply|Heat")
-newRows <-
-  data %>%
-  filter(variable %in% summands) %>%
-  pivot_wider(names_from = variable, values_from = value) %>%
-  rowwise() %>%
-  mutate(!!item := sum(c_across(all_of(summands)))) %>%
-  ungroup() %>%
-  select(!all_of(summands)) %>%
-  pivot_longer(all_of(item), names_to = "variable", values_to = "value")
-showLinePlots(bind_rows(data, newRows) %>% as.quitte(), item)
+showLinePlots(data, item)
 ```
 
 
@@ -190,23 +173,8 @@ showLinePlots(data, items)
 ### Industry with Industrial Processes
 
 ```{r CO2 Industry with Industrial Processes}
-# Emi|CO2|Industry = Emi|CO2|Energy|Demand|Industry + Emi|CO2|Industrial Processes
-# (new REMIND reporting variable coming soon, current solution is terrible)
-# TODO: Switch to new variable as soon as it is also available in historical data.
 item <- "Emi|CO2|Industry"
-summands <- c(
-  "Emi|CO2|Energy|Demand|Industry",
-  "Emi|CO2|Industrial Processes")
-newRows <-
-  data %>%
-  filter(variable %in% summands) %>%
-  pivot_wider(names_from = variable, values_from = value) %>%
-  rowwise() %>%
-  mutate(!!item := sum(c_across(all_of(summands)))) %>%
-  ungroup() %>%
-  select(!all_of(summands)) %>%
-  pivot_longer(all_of(item), names_to = "variable", values_to = "value")
-showLinePlots(bind_rows(data, newRows) %>% as.quitte(), item)
+showLinePlots(data, item)
 ```
 
 

@@ -38,7 +38,15 @@ showLinePlots(data, "GDP|MER pCap")
 showLinePlots(data, "GDP|PPP pCap")
 ```
 
+# GDP - PPP growth rate
+```{r GDP - PPP growth rate}
+showLinePlots(quitte::calc_growthrate(data, only.new = TRUE, filter.function = "GDP|PPP"), "GDP|PPP [Growth Rate]")
+```
 
+# GDP - MER growth rate
+```{r GDP - MER growth rate}
+showLinePlots(quitte::calc_growthrate(data, only.new = TRUE, filter.function = "GDP|MER"), "GDP|MER [Growth Rate]")
+```
 
 ## Capital Stock
 

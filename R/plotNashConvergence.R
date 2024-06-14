@@ -353,6 +353,7 @@ plotNashConvergence <- function(gdx) { # nolint cyclocomp_linter
 
       pmEmiMktTargetDevIter <- pmEmiMktTargetDevIter %>%
         as.quitte() %>%
+        filter(!is.na(.data$value)) %>% # remove unwanted combinations introduced by readGDX
         select("period", "iteration", "ext_regi", "emiMktExt", "value") %>%
         mutate("converged" = .data$value <= cmEmiMktTargetTolerance)
 

@@ -19,7 +19,7 @@
 #' @export
 #'
 #' @importFrom gdx readGDX
-#' @importFrom dplyr %>% filter full_join group_by inner_join left_join mutate rename select summarise
+#' @importFrom dplyr %>% distinct filter full_join group_by inner_join left_join mutate rename select summarise
 #' @importFrom magclass mselect mselect<- collapseDim getItems getRegions getYears
 #' @importFrom madrat toolAggregate
 #' @importFrom tibble as_tibble
@@ -314,11 +314,21 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     v37_plasticsCarbon <- NULL
   }
 
-  if (!is.null(v37_plasticsCarbon)){
+  if (!is.null(v37_plasticsCarbon)) {
     vm_feedstockEmiUnknownFate  <- readGDX(gdx, "vm_feedstockEmiUnknownFate", field = "l", restore_zeros = FALSE,
                                            spatial = 2, react = "silent")[,t,]
-    vm_incinerationEmi          <- readGDX(gdx, "vm_incinerationEmi", field = "l", restore_zeros = FALSE,
-                                           spatial = 2, react = "silent")[,t,]
+
+    vm_incinerationEmi <- readGDX(gdx, 'o37_incinerationEmi', restore_zeros = FALSE, spatial = 2,
+                                  react = 'silent')
+    if (is.null(vm_incinerationEmi)) {
+      vm_incinerationEmi <- readGDX(gdx, "vm_incinerationEmi", field = "l",
+                                    restore_zeros = FALSE, spatial = 2,
+                                    react = "silent")[,t,]
+    }
+    else {
+      vm_incinerationEmi <- matchDim(vm_incinerationEmi, v37_plasticsCarbon,
+                                   fill = 0)
+    }
     vm_nonIncineratedPlastics   <- readGDX(gdx, "vm_nonIncineratedPlastics", field = "l", restore_zeros = FALSE,
                                            spatial = 2, react = "silent")[,t,]
   }
@@ -471,19 +481,27 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   )
 
   # CO2 emissions from the end-of-life of carbon-bearing products
-
   if (!is.null(v37_plasticsCarbon)) {
-    out <- mbind(out,
-               setNames(dimSums(vm_feedstockEmiUnknownFate, dim=3)* GtC_2_MtCO2,
-                        "Emi|CO2|Energy|Waste|+|Feedstocks unknown fate (Mt CO2/yr)"),
-               setNames(dimSums(vm_incinerationEmi, dim=3)* GtC_2_MtCO2,
-                        "Emi|CO2|Energy|Waste|+|Plastics Incineration (Mt CO2/yr)")
-                        )
-    out <- mbind(out,
-              setNames(out[, , "Emi|CO2|Energy|Waste|+|Feedstocks unknown fate (Mt CO2/yr)"]
-                        + out[, , "Emi|CO2|Energy|Waste|+|Plastics Incineration (Mt CO2/yr)"],
-                        "Emi|CO2|Energy|+|Waste (Mt CO2/yr)")
-                        )
+    out <- mbind(
+      out,
+      setNames(
+          dimSums(mselect(vm_feedstockEmiUnknownFate, all_enty = entySEfos),
+                  dim = 3)
+        * GtC_2_MtCO2,
+        "Emi|CO2|Energy|Waste|+|Feedstocks unknown fate (Mt CO2/yr)"),
+
+      setNames(
+          dimSums(mselect(vm_incinerationEmi, all_enty = entySEfos), dim = 3)
+        * GtC_2_MtCO2,
+        "Emi|CO2|Energy|Waste|+|Plastics Incineration (Mt CO2/yr)")
+    )
+    out <- mbind(
+      out,
+      setNames(
+          out[, , "Emi|CO2|Energy|Waste|+|Feedstocks unknown fate (Mt CO2/yr)"]
+        + out[, , "Emi|CO2|Energy|Waste|+|Plastics Incineration (Mt CO2/yr)"],
+        "Emi|CO2|Energy|+|Waste (Mt CO2/yr)")
+    )
   }
   #### 2.1.2 Energy Supply ----
 
@@ -2373,106 +2391,131 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   ## When feedstocks are available ##
   ###################################
   if (!is.null(v37_plasticsCarbon)) {
-    out <- mbind(out,
-               # energy supply
-               setNames(
-                 out[, , "Emi|CO2|Energy|+|Supply (Mt CO2/yr)"]
-                 + out[, , "Emi|GHG|CH4|+|Energy Supply (Mt CO2eq/yr)"]
-                 + out[, , "Emi|GHG|N2O|+|Energy Supply (Mt CO2eq/yr)"],
-                 "Emi|GHG|ETS|+|Energy Supply (Mt CO2eq/yr)"),
+    out <- mbind(
+      out,
+      # energy supply
+      setNames(
+        out[, , "Emi|CO2|Energy|+|Supply (Mt CO2/yr)"]
+        + out[, , "Emi|GHG|CH4|+|Energy Supply (Mt CO2eq/yr)"]
+        + out[, , "Emi|GHG|N2O|+|Energy Supply (Mt CO2eq/yr)"],
+        "Emi|GHG|ETS|+|Energy Supply (Mt CO2eq/yr)"),
 
-               # industry (energy and process emissions)
-               setNames(
-                 # demand-side co2 emissions (before industry CCS)
-                 (dimSums(mselect(EmiFeCarrier[, , "ETS"], emi_sectors = "indst"), dim = 3)
-                  # industry CCS
-                  # TODO: adapt to industry ETS/ESR split
-                  -  dimSums(vm_emiIndCCS[, , emiInd37_fuel]*p_share_CCS, dim=3)
-                  # substract synthetic and biogenic carbon contained in non-incinerated plastics
-                  - dimSums(plastic_CDR, dim=3)
-                  # add captured CO2 from cement process which is not stored
-                  # (EmiMACEq for co2cement_process contains cement process emissions - captured cement co2 process emissions)
-                  + vm_emiIndCCS[, , "co2cement_process"]*(1-p_share_CCS)) * GtC_2_MtCO2
-                 + dimSums(mselect(EmiMACEq[, , "ETS"], sector = "indst"), dim = 3)
-                 # add chemical process emissions to ETS
-                 + dimSums(EmiProcess_Feedstocks, dim = 3) * GtC_2_MtCO2,
-                 "Emi|GHG|ETS|+|Industry (Mt CO2eq/yr)"),
-               setNames(
-                 # demand-side co2 emissions (before industry CCS)
-                 dimSums(mselect(EmiFeCarrier[, , "ES"], emi_sectors = "indst"), dim = 3) * GtC_2_MtCO2,
-                 "Emi|GHG|ESR|+|Industry (Mt CO2eq/yr)"),
+      # industry (energy and process emissions)
+      setNames(
+        # demand-side co2 emissions (before industry CCS)
+          ( dimSums(mselect(EmiFeCarrier[, , "ETS"], emi_sectors = "indst"),
+                    dim = 3)
+            # industry CCS
+            # TODO: adapt to industry ETS/ESR split
+          - dimSums(vm_emiIndCCS[, , emiInd37_fuel] * p_share_CCS, dim = 3)
+            # substract synthetic and biogenic carbon contained in
+            # non-incinerated plastics
+          - dimSums(plastic_CDR, dim = 3)
+            # add captured CO2 from cement process which is not stored
+            # (EmiMACEq for co2cement_process contains cement process
+            # emissions - captured cement co2 process emissions)
+          + vm_emiIndCCS[, , "co2cement_process"] * (1 - p_share_CCS)
+          )
+        * GtC_2_MtCO2
+        + dimSums(mselect(EmiMACEq[, , "ETS"], sector = "indst"), dim = 3)
+        # add chemical process emissions to ETS
+        + dimSums(EmiProcess_Feedstocks, dim = 3) * GtC_2_MtCO2,
+        "Emi|GHG|ETS|+|Industry (Mt CO2eq/yr)"),
 
-               # Transport
-               setNames(
-                 # demand-side co2 emissions (ETS)
-                 (dimSums(mselect(EmiFeCarrier[, , "ETS"], emi_sectors = "trans"), dim = 3)) * GtC_2_MtCO2,
-                 "Emi|GHG|ETS|+|Transport (Mt CO2eq/yr)"),
+      setNames(
+        # demand-side co2 emissions (before industry CCS)
+          dimSums(mselect(EmiFeCarrier[, , "ES"], emi_sectors = "indst"),
+                  dim = 3)
+        * GtC_2_MtCO2,
+        "Emi|GHG|ESR|+|Industry (Mt CO2eq/yr)"),
 
-               setNames(
-                 # demand-side co2 emissions (ESR)
-                 dimSums(mselect(EmiFeCarrier[, , "ES"], emi_sectors = "trans"), dim = 3) * GtC_2_MtCO2
-                 + dimSums(mselect(EmiMACEq[, , "ES"], sector = "trans"), dim = 3),
-                 "Emi|GHG|ESR|+|Transport (Mt CO2eq/yr)"),
+      # Transport
+      setNames(
+        # demand-side co2 emissions (ETS)
+        (dimSums(mselect(EmiFeCarrier[, , "ETS"], emi_sectors = "trans"), dim = 3)) * GtC_2_MtCO2,
+        "Emi|GHG|ETS|+|Transport (Mt CO2eq/yr)"),
 
-               setNames(
-                 # demand-side co2 emissions (bunkers)
-                 dimSums(mselect(EmiFeCarrier[, , "other"], emi_sectors = "trans"), dim = 3) * GtC_2_MtCO2,
-                 "Emi|GHG|Outside ETS and ESR|+|Transport (Mt CO2eq/yr)"),
+      setNames(
+        # demand-side co2 emissions (ESR)
+        dimSums(mselect(EmiFeCarrier[, , "ES"], emi_sectors = "trans"), dim = 3) * GtC_2_MtCO2
+        + dimSums(mselect(EmiMACEq[, , "ES"], sector = "trans"), dim = 3),
+        "Emi|GHG|ESR|+|Transport (Mt CO2eq/yr)"),
 
-               # Buildings
-               setNames(
-                 # demand-side co2 emissions
-                 dimSums(mselect(EmiFeCarrier[, , "ES"], emi_sectors = "build"), dim = 3) * GtC_2_MtCO2,
-                 "Emi|GHG|ESR|+|Buildings (Mt CO2eq/yr)"),
+      setNames(
+        # demand-side co2 emissions (bunkers)
+        dimSums(mselect(EmiFeCarrier[, , "other"], emi_sectors = "trans"), dim = 3) * GtC_2_MtCO2,
+        "Emi|GHG|Outside ETS and ESR|+|Transport (Mt CO2eq/yr)"),
 
-               # CDR
-               setNames(
-                 # demand-side co2 emissions (before industry CCS)
-                 # CDR energy-related emissions
-                 (dimSums(mselect(EmiFeCarrier[, , "ETS"], emi_sectors = "CDR"), dim = 3)
-                  # Captured CO2 by non-BECCS capture technologies
-                  + (vm_emiCdrTeDetail[, , "weathering"] + vm_emiCdrTeDetail[, , "dac"] * p_share_CCS)) * GtC_2_MtCO2,
-                 "Emi|GHG|ETS|+|non-BECCS CDR (Mt CO2eq/yr)"),
+      # Buildings
+      setNames(
+        # demand-side co2 emissions
+        dimSums(mselect(EmiFeCarrier[, , "ES"], emi_sectors = "build"), dim = 3) * GtC_2_MtCO2,
+        "Emi|GHG|ESR|+|Buildings (Mt CO2eq/yr)"),
 
-               # Extraction
-               setNames(
-                 out[, , "Emi|GHG|CH4|+|Extraction (Mt CO2eq/yr)"],
-                 "Emi|GHG|ETS|+|Extraction (Mt CO2eq/yr)"),
+      # CDR
+      setNames(
+        # demand-side co2 emissions (before industry CCS)
+        # CDR energy-related emissions
+        (dimSums(mselect(EmiFeCarrier[, , "ETS"], emi_sectors = "CDR"), dim = 3)
+         # Captured CO2 by non-BECCS capture technologies
+         + (vm_emiCdrTeDetail[, , "weathering"] + vm_emiCdrTeDetail[, , "dac"] * p_share_CCS)) * GtC_2_MtCO2,
+        "Emi|GHG|ETS|+|non-BECCS CDR (Mt CO2eq/yr)"),
 
-               # Agriculture
-               setNames(
-                 out[, , "Emi|GHG|CH4|+|Agriculture (Mt CO2eq/yr)"]
-                 + out[, , "Emi|GHG|N2O|+|Agriculture (Mt CO2eq/yr)"],
-                 "Emi|GHG|ESR|+|Agriculture (Mt CO2eq/yr)"),
+      # Extraction
+      setNames(
+        out[, , "Emi|GHG|CH4|+|Extraction (Mt CO2eq/yr)"],
+        "Emi|GHG|ETS|+|Extraction (Mt CO2eq/yr)"),
 
-               # Waste emissions from energy sector due to end-of-life emissions of chemical products
-               setNames((dimSums(mselect(vm_feedstockEmiUnknownFate, all_emiMkt = "ETS"), dim=3) +
-                        dimSums(mselect(vm_incinerationEmi, all_emiMkt = "ETS"), dim=3)) * GtC_2_MtCO2,
-                        "Emi|GHG|ETS|+|Energy Waste (Mt CO2eq/yr)"),
+      # Agriculture
+      setNames(
+        out[, , "Emi|GHG|CH4|+|Agriculture (Mt CO2eq/yr)"]
+        + out[, , "Emi|GHG|N2O|+|Agriculture (Mt CO2eq/yr)"],
+        "Emi|GHG|ESR|+|Agriculture (Mt CO2eq/yr)"),
 
-               # Waste emissions from energy sector due to end-of-life emissions of chemical products
-               setNames((dimSums(mselect(vm_feedstockEmiUnknownFate, all_emiMkt = "ES"), dim=3) +
-                           dimSums(mselect(vm_incinerationEmi, all_emiMkt = "ES"), dim=3)) * GtC_2_MtCO2,
-                        "Emi|GHG|ESR|+|Energy Waste (Mt CO2eq/yr)"),
+      # Waste emissions from energy sector due to end-of-life emissions of
+      # chemical products
+      setNames(
+          ( dimSums(mselect(vm_feedstockEmiUnknownFate,
+                            all_enty = entySEfos, all_emiMkt = "ETS"),
+                    dim = 3)
+          + dimSums(mselect(vm_incinerationEmi,
+                            all_enty = entySEfos, all_emiMkt = "ETS"),
+                    dim = 3)
+          )
+        * GtC_2_MtCO2,
+        "Emi|GHG|ETS|+|Energy Waste (Mt CO2eq/yr)"),
 
-               # Waste (from MAC curve)
-               setNames(
-                 dimSums(mselect(EmiMACEq[, , "ETS"], sector = "Waste"), dim = 3) ,
-                 "Emi|GHG|ETS|+|Waste (Mt CO2eq/yr)"),
-               setNames(
-                 dimSums(mselect(EmiMACEq[, , "ES"], sector = "Waste"), dim = 3),
-                 "Emi|GHG|ESR|+|Waste (Mt CO2eq/yr)"),
+      # Waste emissions from energy sector due to end-of-life emissions of
+      # chemical products
+      setNames(
+          ( dimSums(mselect(vm_feedstockEmiUnknownFate,
+                            all_enty = entySEfos, all_emiMkt = "ES"),
+                    dim = 3)
+          + dimSums(mselect(vm_incinerationEmi,
+                            all_enty = entySEfos, all_emiMkt = "ES"),
+                    dim = 3)
+          )
+        * GtC_2_MtCO2,
+        "Emi|GHG|ESR|+|Energy Waste (Mt CO2eq/yr)"),
 
-               setNames(
-                 out[, , "Emi|GHG|N2O|+|Land-Use Change (Mt CO2eq/yr)"]
-                 + out[, , "Emi|GHG|CH4|+|Land-Use Change (Mt CO2eq/yr)"]
-                 + out[, , "Emi|CO2|+|Land-Use Change (Mt CO2/yr)"],
-                 "Emi|GHG|Outside ETS and ESR|+|Land-Use Change (Mt CO2eq/yr)"),
+      # Waste (from MAC curve)
+      setNames(
+        dimSums(mselect(EmiMACEq[, , "ETS"], sector = "Waste"), dim = 3) ,
+        "Emi|GHG|ETS|+|Waste (Mt CO2eq/yr)"),
+      setNames(
+        dimSums(mselect(EmiMACEq[, , "ES"], sector = "Waste"), dim = 3),
+        "Emi|GHG|ESR|+|Waste (Mt CO2eq/yr)"),
 
-               # F-Gases
-               setNames(
-                 out[, , "Emi|GHG|+|F-Gases (Mt CO2eq/yr)"],
-                 "Emi|GHG|Outside ETS and ESR|+|F-Gases (Mt CO2eq/yr)")
+      setNames(
+        out[, , "Emi|GHG|N2O|+|Land-Use Change (Mt CO2eq/yr)"]
+        + out[, , "Emi|GHG|CH4|+|Land-Use Change (Mt CO2eq/yr)"]
+        + out[, , "Emi|CO2|+|Land-Use Change (Mt CO2/yr)"],
+        "Emi|GHG|Outside ETS and ESR|+|Land-Use Change (Mt CO2eq/yr)"),
+
+      # F-Gases
+      setNames(
+        out[, , "Emi|GHG|+|F-Gases (Mt CO2eq/yr)"],
+        "Emi|GHG|Outside ETS and ESR|+|F-Gases (Mt CO2eq/yr)")
 
     )
   } else {

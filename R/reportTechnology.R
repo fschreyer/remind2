@@ -23,7 +23,7 @@
 #' @export
 #' @importFrom gdx readGDX
 #' @importFrom magclass getYears getSets collapseNames new.magpie getRegions getSets<- mbind setNames getNames getItems<-
-#' @importFrom luscale speed_aggregate
+#' @importFrom madrat toolAggregate
 #'
 
 reportTechnology <- function(gdx, output = NULL, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150)) {
@@ -353,7 +353,7 @@ reportTechnology <- function(gdx, output = NULL, regionSubsetList = NULL, t = c(
 
   # write to output ----
   ## substitute NA by 1E-30 to avoid that if in 2005, 2010, 2015, 2130, 2150,
-  ## output is 0 in each region, the sum is returned by speed_aggregate
+  ## output is 0 in each region, the sum is returned by toolAggregate
   output[is.na(output) | output == 0] <- 1E-30
   ## delete "+" and "++" from variable names
   output <- deletePlus(output)
@@ -366,7 +366,7 @@ reportTechnology <- function(gdx, output = NULL, regionSubsetList = NULL, t = c(
   tmp_GLO <- new.magpie("GLO", getYears(tmp), magclass::getNames(tmp), fill = 0)
 
   for (i2e in names(int2ext)) {
-    tmp_GLO["GLO", , i2e] <- speed_aggregate(tmp[, , i2e], map, weight = output[map$region, , int2ext[[i2e]]])
+    tmp_GLO["GLO", , i2e] <- toolAggregate(tmp[, , i2e], rel= map, weight = output[map$region, , int2ext[[i2e]]])
   }
   tmp <- mbind(tmp, tmp_GLO)
 
@@ -376,7 +376,7 @@ reportTechnology <- function(gdx, output = NULL, regionSubsetList = NULL, t = c(
     for (region in names(regionSubsetList)) {
       tmp_RegAgg_ie2 <- do.call("mbind", lapply(names(int2ext), function(i2e) {
         map <- data.frame(region = regionSubsetList[[region]], parentRegion = region, stringsAsFactors = FALSE)
-        result <- speed_aggregate(tmp[regionSubsetList[[region]], , i2e], map, weight = output[regionSubsetList[[region]], , as.character(int2ext[i2e])])
+        result <- toolAggregate(tmp[regionSubsetList[[region]], , i2e], rel = map, weight = output[regionSubsetList[[region]], , as.character(int2ext[i2e])])
         getItems(result, dim = 1) <- region
         for (t in getYears(tmp)) {
           if (all(output[regionSubsetList[[region]], t, as.character(int2ext[i2e])] == 0)) {

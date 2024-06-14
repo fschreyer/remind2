@@ -13,8 +13,8 @@ library(gdx)
 test_that("Test if REMIND reporting is produced as it should and check data integrity", {
   skip_if_not(as.logical(gdxrrw::igdx(silent = TRUE)), "gdxrrw is not initialized properly")
 
-  # add GDXs for comparison here:
-  gdxList <- c("fulldata-release.gdx" = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_fulldata.gdx",
+  # GDXs for comparison. Once the remind2::reportEmi does not report negative gross emissions we will switch to SSP2EU-EU21-PkBudg and SSP2EU-NPi
+  gdxList <- c("fulldata-release.gdx" = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_SSP2EU-EU21-NPi_2024-03-28_10.23.13.gdx",
                "fulldata-AMT.gdx"     = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_SSP2EU-PkBudg650-AMT.gdx")
 
   gdxPaths <- NULL
@@ -29,7 +29,7 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
 
   checkPiamTemplates <- function(computedVariables) {
     # if you add a new template here, make sure to adjust the piamInterfaces version in the DESCRIPTION
-    templates <- c("AR6", "AR6_NGFS", "ELEVATE", "NAVIGATE", "SHAPE")
+    templates <- c("AR6", "AR6_NGFS", "ELEVATE", "NAVIGATE", "SHAPE", "ARIADNE", "ECEMF")
     for (template in templates) {
       templateVariables <- template %>%
         piamInterfaces::getREMINDTemplateVariables() %>%
@@ -63,6 +63,17 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
     computedVariables <- deletePlus(getItems(mifContent, dim = 3.3))
     computedVariables <- gsub("\\(\\)", "(unitless)", computedVariables)
     checkPiamTemplates(computedVariables)
+
+    expect_no_error(
+      test_ranges(
+        data = mifContent,
+        tests = list(
+          list(
+            "^Emi\\|CO2\\|Energy\\|Demand\\|Industry\\|.*Fossil \\(Mt CO2/yr\\)$",
+            low = 0),
+          list("Share.*\\((%|Percent)\\)$", low = 0, up = 100)),
+        reaction = 'stop'))
+
     magclass::write.report(
       x = magclass::collapseNames(mifContent),
       file = file.path(tempdir(), paste0(numberOfMifs, ".mif")),
@@ -90,7 +101,8 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
 
   suppressWarnings(
     capture.output( # Do not show stdout text.
-      compareScenarios2(
+      piamPlotComparison::compareScenarios(
+        projectLibrary = "remind2",
         mifScen = myMifs,
         mifHist = histMif,
         outputFormat = "pdf",
