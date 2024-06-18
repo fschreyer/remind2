@@ -1070,51 +1070,47 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
   q_balcapture  <- readGDX(gdx,"q_balcapture",field="m", restore_zeros = F)
   q_balCCUvsCCS <- readGDX(gdx, "q_balCCUvsCCS", field = "m", restore_zeros = F)
   q39_emiCCU <- readGDX(gdx, "q39_emiCCU", field = "m", restore_zeros = F)
-  q33_capconst_dac <- readGDX(gdx, "q33_capconst_dac", field = "m", restore_zeros = F)
-  q33_ccsbal <- readGDX(gdx, "q33_ccsbal", field = "m", restore_zeros = F)
+  q33_DAC_emi <- readGDX(gdx, "q33_DAC_emi", field = "m", restore_zeros = F)
   q_limitCapCCS <- readGDX(gdx, "q_limitCapCCS", field = "m", restore_zeros = F)
 
 
   Marginals <- NULL
-
-  Marginals <- mbind(Marginals,
-                     # divide marginal by marginal of budget equation to get to trUSD/GtC
-                     # (as marginal of equation is expressed per unit welfare, which is the objective function)
-                     # convert to USD/tCO2 by *1e3/3.66
-                     setNames( collapseNames(q_balcapture /
-                                (budget.m[,getYears(q_balcapture),]+1e-10))*1e3/3.66,
-                               "Internal|Model Marginal|q_balcapture (US$2005/tCO2)"),
-
-                     setNames( collapseNames(q_balCCUvsCCS /
-                                               (budget.m[,getYears(q_balCCUvsCCS),]+1e-10))*1e3/3.66,
-                               "Internal|Model Marginal|q_balCCUvsCCS (US$2005/tCO2)"),
-
-                     setNames( collapseNames(q39_emiCCU[,,"MeOH"] /
-                                               (budget.m[,getYears(q39_emiCCU[,,"MeOH"]),]+1e-10))*1e3/3.66,
-                               "Internal|Model Marginal|q39_emiCCU|Liquids (US$2005/tCO2)"),
-
-                     setNames( collapseNames(q39_emiCCU[,,"h22ch4"] /
-                                               (budget.m[,getYears(q39_emiCCU[,,"h22ch4"]),]+1e-10))*1e3/3.66,
-                               "Internal|Model Marginal|q39_emiCCU|Gases (US$2005/tCO2)"),
-
-                     setNames( collapseNames( q33_capconst_dac /
-                                               (budget.m[,getYears( q33_capconst_dac),]+1e-10))*1e3/3.66,
-                               "Internal|Model Marginal|q33_capconst_dac (US$2005/tCO2)"),
-
-                     setNames( collapseNames(q33_ccsbal /
-                                               (budget.m[,getYears(q33_ccsbal),]+1e-10))*1e3/3.66,
-                               "Internal|Model Marginal|q33_ccsbal (US$2005/tCO2)"),
-
-                     setNames( collapseNames(q_limitCapCCS /
-                                               (budget.m[,getYears(q_limitCapCCS),]+1e-10))*1e3/3.66,
-                               "Internal|Model Marginal|q_limitCapCCS (US$2005/tCO2)"))
+#
+#   Marginals <- mbind(Marginals,
+#                      # divide marginal by marginal of budget equation to get to trUSD/GtC
+#                      # (as marginal of equation is expressed per unit welfare, which is the objective function)
+#                      # convert to USD/tCO2 by *1e3/3.66
+#                      setNames( collapseNames(q_balcapture /
+#                                 (budget.m[,getYears(q_balcapture),]+1e-10))*1e3/3.66,
+#                                "Internal|Model Marginal|q_balcapture (US$2005/tCO2)"),
+#
+#                      setNames( collapseNames(q_balCCUvsCCS /
+#                                                (budget.m[,getYears(q_balCCUvsCCS),]+1e-10))*1e3/3.66,
+#                                "Internal|Model Marginal|q_balCCUvsCCS (US$2005/tCO2)"),
+#
+#                      setNames( collapseNames(q39_emiCCU[,,"MeOH"] /
+#                                                (budget.m[,getYears(q39_emiCCU[,,"MeOH"]),]+1e-10))*1e3/3.66,
+#                                "Internal|Model Marginal|q39_emiCCU|Liquids (US$2005/tCO2)"),
+#
+#                      setNames( collapseNames(q39_emiCCU[,,"h22ch4"] /
+#                                                (budget.m[,getYears(q39_emiCCU[,,"h22ch4"]),]+1e-10))*1e3/3.66,
+#                                "Internal|Model Marginal|q39_emiCCU|Gases (US$2005/tCO2)"),
+#
+#                      setNames( collapseNames( q33_DAC_emi /
+#                                                (budget.m[,getYears( q33_DAC_emi),]+1e-10))*1e3/3.66,
+#                                "Internal|Model Marginal|q33_DAC_emi (US$2005/tCO2)"),
+#
+#
+#                      setNames( collapseNames(q_limitCapCCS /
+#                                                (budget.m[,getYears(q_limitCapCCS),]+1e-10))*1e3/3.66,
+#                                "Internal|Model Marginal|q_limitCapCCS (US$2005/tCO2)"))
 
 
   #### qm_prodFe Marginals ----
   #
 
 
-  q_balFe <- readGDX(gdx, "qm_balFe", field = "m", restore_zeros = F)
+  q_balFe <- readGDX(gdx, c("qm_balFe","q_balFe"), field = "m", restore_zeros = F)
 
   BalFe.Marginal <- collapseNames(q_balFe /
                                     (budget.m[,getYears(q_balFe),]+1e-10))*tdptwyr2dpgj
