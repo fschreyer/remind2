@@ -208,6 +208,14 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
            fety = 'all_enty1', 'secInd37', 'emiMkt' = 'all_emiMkt',
            o37_demFEindsub = 'value')
 
+
+  vm_demFENonEnergySector_tibble <- vm_demFENonEnergySector %>%
+      as_tibble() %>%
+      select(t = 'ttot', regi = 'all_regi', sety = 'all_enty',
+           fety = 'all_enty1', 'emiMkt' = 'all_emiMkt',
+           vm_demFENonEnergySector = 'value') %>%
+     mutate( secInd37 = "chemicals")
+
   pm_emifac_tibble <- pm_emifac %>%
     mselect(mutate(se2fe, all_enty2 = 'co2')) %>%
     as_tibble() %>%
@@ -225,14 +233,25 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
 
     subsector_total_emissions <- inner_join(
     o37_demFeIndSub_tibble,
+
     pm_emifac_tibble,
 
     c('t', 'regi', 'sety', 'fety')
   ) %>%
+      left_join(
+        vm_demFENonEnergySector_tibble,
+        c('t', 'regi', 'sety', 'fety', 'emiMkt', 'secInd37')
+      ) %>%
+      mutate( vm_demFENonEnergySector = ifelse(is.na(.data$vm_demFENonEnergySector),
+                                               0,
+                                               .data$vm_demFENonEnergySector)) %>%
+
     group_by(.data$t, .data$regi, .data$secInd37) %>%
-    summarise(
-      subsector_total_emissions = sum(.data$o37_demFEindsub * .data$pm_emifac),
-      .groups = 'drop')
+      summarise(
+        # calculate industry smokestack emissions as (FE - FE Non-energy Use) * emissions factor
+        subsector_total_emissions = sum( (.data$o37_demFEindsub - .data$vm_demFENonEnergySector) * .data$pm_emifac),
+        .groups = 'drop')
+
 
   subsector_emissions <- inner_join(
     o37_demFeIndSub_tibble,
@@ -240,10 +259,19 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
 
     c('t', 'regi', 'sety', 'fety')
   ) %>%
+
+    left_join(
+      vm_demFENonEnergySector_tibble,
+      c('t', 'regi', 'sety', 'fety', 'emiMkt', 'secInd37')
+    ) %>%
+    mutate( vm_demFENonEnergySector = ifelse(is.na(.data$vm_demFENonEnergySector),
+                                             0,
+                                             .data$vm_demFENonEnergySector)) %>%
+
     group_by(.data$t, .data$regi, .data$secInd37, .data$sety, .data$fety,
              .data$emiMkt) %>%
     summarise(
-      subsector_emissions = sum(.data$o37_demFEindsub * .data$pm_emifac),
+      subsector_emissions = sum((.data$o37_demFEindsub - .data$vm_demFENonEnergySector) * .data$pm_emifac),
       .groups = 'drop')
 
   pm_IndstCO2Captured <- subsector_emissions %>%
@@ -269,7 +297,9 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     as.magpie(spatial = 2, temporal = 1, data = ncol(.)) %>%
     ifelse(is.finite(.), ., 0)   # replace NaN by 0
 
-  rm(vm_emiIndCCS_tibble, subsector_total_emissions, pm_emifac_tibble)
+  rm(vm_emiIndCCS_tibble, subsector_total_emissions, pm_emifac_tibble, vm_demFENonEnergySector_tibble)
+
+
 
   # utility functions ----
   # Convert a mixer table into a list that can be passed to mselect() to
