@@ -1878,7 +1878,8 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   out <- mbind(out,
                setNames(out[, , "Emi|CO2|Energy|Demand|+|Industry (Mt CO2/yr)"]
                         - out[, , "Emi|CO2|CDR|Industry CCS|Synthetic Fuels (Mt CO2/yr)"]
-                        - out[, , "Emi|CO2|CDR|BECCS|Industry (Mt CO2/yr)"],
+                        - out[, , "Emi|CO2|CDR|BECCS|Industry (Mt CO2/yr)"]
+                        - out[, , "Emi|CO2|CDR|Materials|+|Plastics (Mt CO2/yr)"],
                         "Emi|CO2|Gross|Energy|Demand|+|Industry (Mt CO2/yr)"),
                # buildings and transport do not capture emissions in REMIND, so gross emissions = net emissions
                setNames(out[, , "Emi|CO2|Energy|Demand|+|Buildings (Mt CO2/yr)"],
@@ -1902,8 +1903,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     # calculate gross emissions in energy waste sector
     out <- mbind(out,
                  # total gross energy waste emissions
-                 setNames(out[, , "Emi|CO2|Energy|+|Waste (Mt CO2/yr)"]
-                          - out[, , "Emi|CO2|CDR|Materials|+|Plastics (Mt CO2/yr)"],
+                 setNames(out[, , "Emi|CO2|Energy|+|Waste (Mt CO2/yr)"],
                           "Emi|CO2|Gross|Energy|+|Waste (Mt CO2/yr)"))
   }
 
