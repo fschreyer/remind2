@@ -274,7 +274,7 @@ reportLCOE <- function(gdx, output.type = "both"){
 
  # 2.2 secondary fuel cost
  Fuel.Price <- mbind(pm_PEPrice,pm_SEPrice )[,,]*1e12 # convert from trUSD2005/TWa to USD2005/TWa [note: this already includes the CO2 price]
- Fuel.Price <- matchRegions(Fuel.Price, vm_prodSe, fill = 0)
+ Fuel.Price <- magclass::matchDim(Fuel.Price, vm_prodSe, dim = c(1), fill = 0)
 
  pm_SecFuel <- pm_prodCouple[,,getNames(pm_prodCouple)[pm_prodCouple[reg1,,]<0]] # keep only second fuel consumption, not co-production
  SecFuelTechs <- intersect(getNames(pm_SecFuel, dim = 3), pc2te$all_te) # determine all te that have couple production
@@ -1204,7 +1204,7 @@ df.co2price.weighted <- df.pomeg.expand %>%
     o_margAdjCostInv[is.na(o_margAdjCostInv)] <- 0
 
     # modify Fuel.Price magclass object if regions inconsistent with p33_fedem
-    Fuel.Price <- matchRegions(Fuel.Price, p33_fedem, fill = 0)
+    Fuel.Price <- magclass::matchDim(Fuel.Price, p33_fedem, dim = c(1), fill = 0)
     # capital cost in trUSD2005/GtC -> convert to USD2015/tCO2
     LCOD[,,"Investment Cost"] <- vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"] * p_teAnnuity[,,"dac"]*1e3
     if ("dac" %in% getNames(o_margAdjCostInv)) {

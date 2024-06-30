@@ -425,10 +425,24 @@ items <- c(
 showAreaAndBarPlots(data, items, tot, scales = "fixed")
 ```
 
-### F-Gases
+## F-Gases
 
 ```{r F-Gases}
 showLinePlots(data, "Emi|GHG|F-Gases")
+```
+
+## SO2
+```{r SO2 Emissions}
+tot <- "Emi|SO2"
+items <- c(
+  "Emi|SO2|Energy Demand|Buildings",
+  "Emi|SO2|Energy Demand|Industry",
+  "Emi|SO2|Energy Demand|Transport",
+  "Emi|SO2|Energy Supply",
+  "Emi|SO2|Land Use",
+  "Emi|SO2|Solvents",
+  "Emi|SO2|Waste")
+showAreaAndBarPlots(data, items, tot, scales = "fixed")
 ```
 
 ## Industry Subsector Emissions

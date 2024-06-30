@@ -25,16 +25,14 @@ reportClimate <- function(
   pm_globalMeanTemperature <- readGDX(gdx, "pm_globalMeanTemperature", react = "silent", restore_zeros = FALSE)
   if (!is.null(pm_globalMeanTemperature)) {
     pm_globalMeanTemperature <- setNames(pm_globalMeanTemperature, "Temperature|Global Mean (K)")
-    pm_globalMeanTemperature <- matchYears(pm_globalMeanTemperature, output, fill = NA)
-    pm_globalMeanTemperature <- matchRegions(pm_globalMeanTemperature, output, fill = NA)
+    pm_globalMeanTemperature <- magclass::matchDim(pm_globalMeanTemperature, output, dim = c(1, 2), fill = NA)
   } else {
     message("reportClimate.R: pm_globalMeanTemperature not found in GDX file.")
   }
   p15_forc_magicc <- readGDX(gdx, "p15_forc_magicc", react = "silent", restore_zeros = FALSE)
   if (!is.null(p15_forc_magicc)) {
     p15_forc_magicc <- setNames(p15_forc_magicc, "Forcing (W/m2)")
-    p15_forc_magicc <- matchYears(p15_forc_magicc, output, fill = NA)
-    p15_forc_magicc <- matchRegions(p15_forc_magicc, output, fill = NA)
+    p15_forc_magicc <- magclass::matchDim(p15_forc_magicc, output, dim = c(1, 2), fill = NA)
   } else {
     message("reportClimate.R: p15_forc_magicc not found in GDX file.")
   }

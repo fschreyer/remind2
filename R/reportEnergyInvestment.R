@@ -170,6 +170,7 @@ reportEnergyInvestment <- function(gdx, regionSubsetList = NULL, t = c(seq(2005,
                               + inv_se(ie = se_Liq, oe = se2fe$all_enty1, se2fe, adjte, v_directteinv, v_adjustteinv, te = se2fe$all_te)),  "Energy Investments|Liquids including gas stations (billion US$2005/yr)"))
 
   tmp <- mbind(tmp, setNames(v_directteinv[, , "ccsinje"] + v_adjustteinv[, , "ccsinje"], "Energy Investments|CO2 Trans&Stor (billion US$2005/yr)") * 1000)
+  tmp <- mbind(tmp, setNames(v_directteinv[, , "dac"] + v_adjustteinv[, , "dac"], "Energy Investments|DAC (billion US$2005/yr)") * 1000)
   tmp <- mbind(tmp, setNames(dimSums(v_directteinv[, , teue2rlf$all_te] + v_adjustteinv[, , teue2rlf$all_te], dim = 3), "Energy Investments|Demand (billion US$2005/yr)") * 1000)
   tmp <- mbind(tmp, setNames((inv_se(ie = temapall$all_enty, oe = temapall$all_enty1, temapall[!(temapall$all_te %in% teue2rlf$all_te), ], adjte, v_directteinv, v_adjustteinv, te = all_te)
   + inv_se(ie = NULL, oe = NULL, tenotransform, adjte, v_directteinv, v_adjustteinv, te = all_te)),              "Energy Investments|Supply (billion US$2005/yr)"))
