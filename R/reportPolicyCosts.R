@@ -81,16 +81,19 @@ reportPolicyCosts <- function(gdx,gdx_ref,regionSubsetList=NULL,t=c(seq(2005,206
   currAcc_bau <- dimSums( (Xport_bau[,,trade] - Mport_bau[,,trade] ) * pm_pvp_bau[,,trade]/setNames(pm_pvp_bau[,,'good'],NULL),dim = 3)
   currAcc     <- dimSums( (Xport[,,trade] - Mport[,,trade] ) * pm_pvp[,,trade]/setNames(pm_pvp[,,'good'],NULL),dim = 3)
   ####### calculate reporting parameters ############
-  tmp <- NULL 
+  tmp <- NULL
   tmp <- mbind(tmp,setNames((cons_bau - cons) * 1000, "Policy Cost|Consumption Loss (billion US$2005/yr)" ))
-  tmp <- mbind(tmp,setNames((cons_bau - cons)/(cons_bau + 1e-10) * 100, "Policy Cost|Consumption Loss|Relative to Reference Consumption (percent)")) 
+  tmp <- mbind(tmp,setNames((cons_bau - cons)/(cons_bau + 1e-10) * 100, "Policy Cost|Consumption Loss|Relative to Reference Consumption (percent)"))
   tmp <- mbind(tmp,setNames((gdp_bau - gdp) * 1000, "Policy Cost|GDP Loss (billion US$2005/yr)" ))
-  tmp <- mbind(tmp,setNames((gdp_bau - gdp)/(gdp_bau + 1e-10) * 100, "Policy Cost|GDP Loss|Relative to Reference GDP (percent)")) 
+  tmp <- mbind(tmp,setNames((gdp_bau - gdp)/(gdp_bau + 1e-10) * 100, "Policy Cost|GDP Loss|Relative to Reference GDP (percent)"))
   tmp <- mbind(tmp,setNames((v_costfu +v_costin + v_costom  - (v_costfu_bau + v_costin_bau + v_costom_bau)) * 1000, "Policy Cost|Additional Total Energy System Cost (billion US$2005/yr)" ))
-  # Policy costs calculated as consumption losses net the effect of climate-policy induced changes in the current account  
+  # Policy costs calculated as consumption losses net the effect of climate-policy induced changes in the current account
   tmp <- mbind(tmp,setNames(((cons_bau + currAcc_bau) - (cons + currAcc)) * 1000, "Policy Cost|Consumption + Current Account Loss (billion US$2005/yr)" ))
   tmp <- mbind(tmp,setNames(((cons_bau + currAcc_bau) - (cons + currAcc))/(cons_bau + currAcc_bau + 1e-10) * 100, "Policy Cost|Consumption + Current Account Loss|Relative to Reference Consumption + Current Account (percent)" ))
-  
+
+  # report energy system cost (Investment Cost + Fuel Cost + OM Cost) separately
+  tmp <- mbind(tmp,setNames((v_costfu +v_costin + v_costom) * 1000, "Energy System Cost (billion US$2005/yr)" ))
+
   # add other region aggregations
   if (!is.null(regionSubsetList))
     tmp <- mbind(tmp, calc_regionSubset_sums(tmp, regionSubsetList))
