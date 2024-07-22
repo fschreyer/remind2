@@ -1203,8 +1203,6 @@ df.co2price.weighted <- df.pomeg.expand %>%
     # set NA to 0 in marginal adjustment cost
     o_margAdjCostInv[is.na(o_margAdjCostInv)] <- 0
 
-    # modify Fuel.Price magclass object if regions inconsistent with p33_fedem
-    Fuel.Price <- magclass::matchDim(Fuel.Price, p33_fedem, dim = c(1), fill = 0)
     # capital cost in trUSD2005/GtC -> convert to USD2015/tCO2
     LCOD[,,"Investment Cost"] <- vm_costTeCapital[,,"dac"] * 1.2 / 3.66 /vm_capFac[,,"dac"] * p_teAnnuity[,,"dac"]*1e3
     if ("dac" %in% getNames(o_margAdjCostInv)) {
