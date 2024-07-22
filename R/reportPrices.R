@@ -969,7 +969,13 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
 
   )
 
-
+  ## carbon management marginals
+  int2ext <- c(int2ext,
+               "Internal|Model Marginal|q39_emiCCU|Liquids (US$2005/tCO2)"       = "FE|Liquids|Hydrogen (EJ/yr)",
+               "Internal|Model Marginal|q39_emiCCU|Gases (US$2005/tCO2)"       = "FE|Gases|Hydrogen (EJ/yr)",
+               "Internal|Model Marginal|q_balcapture (US$2005/tCO2)" = "Carbon Management|Carbon Capture (Mt CO2/yr)",
+               "Internal|Model Marginal|q_balCCUvsCCS (US$2005/tCO2)" =  "Carbon Management|Carbon Capture (Mt CO2/yr)",
+               "Internal|Model Marginal|q33_DAC_emi (US$2005/tCO2)" = "Carbon Management|Carbon Capture|DAC (Mt CO2/yr)")
 
 
 
