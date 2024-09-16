@@ -1768,7 +1768,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     # calculate share of atmospheric and biogenic carbon contained in plastic products
     p_share_atmBiogco2 <- dimSums(
       (out[, , "Carbon Management|Materials|Plastics|+|Biomass (Mt CO2/yr)"] +
-         out[, , "Carbon Management|Materials|Plastics|+|Synfuels (Mt CO2/yr)"] * p_share_atmosco2) /
+         out[, , "Carbon Management|Materials|Plastics|+|Synfuels (Mt CO2/yr)"]) /
         out[, , "Carbon Management|Materials|+|Plastics (Mt CO2/yr)"]
     )
 
@@ -1789,7 +1789,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                setNames(-out[, , "Carbon Management|Storage|Industry Energy|+|Biomass (Mt CO2/yr)"],
                         "Emi|CO2|CDR|BECCS|Industry (Mt CO2/yr)"),
                # stored CO2 in industry from carbon-neutral fuels (synthetic fuels)
-               setNames(-out[, , "Carbon Management|Carbon Capture|Industry Energy|+|Synfuel (Mt CO2/yr)"] * p_share_atmosco2 * p_share_CCS,
+               setNames(-out[, , "Carbon Management|Carbon Capture|Industry Energy|+|Synfuel (Mt CO2/yr)"] * p_share_CCS,
                         "Emi|CO2|CDR|Industry CCS|Synthetic Fuels (Mt CO2/yr)"),
 
                # CO2 stored in plastic products that are not incinerated and come from atmospheric or biogenic carbon
@@ -1838,7 +1838,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                  setNames(-out[, , "Carbon Management|Storage|Industry Energy|+|Biomass (Mt CO2/yr)"],
                           "Emi|CO2|CDR|BECCS|Industry (Mt CO2/yr)"),
                  # stored CO2 in industry from carbon-neutral fuels (synthetic fuels)
-                 setNames(-out[, , "Carbon Management|Carbon Capture|Industry Energy|+|Synfuel (Mt CO2/yr)"] * p_share_atmosco2 * p_share_CCS,
+                 setNames(-out[, , "Carbon Management|Carbon Capture|Industry Energy|+|Synfuel (Mt CO2/yr)"]  * p_share_CCS,
                           "Emi|CO2|CDR|Industry CCS|Synthetic Fuels (Mt CO2/yr)"),
                  # total DACCS
                  setNames(-out[, , "Carbon Management|Storage|+|DAC (Mt CO2/yr)"],
