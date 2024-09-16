@@ -353,16 +353,39 @@ reportSE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
     vm_Mport <- readGDX(gdx, "vm_Mport", field = "l", restore_zeros = F)[, t, ]
     vm_Xport <- readGDX(gdx, "vm_Xport", field = "l", restore_zeros = F)[, t, ]
 
-    tmp1 <- mbind(tmp1,
-      setNames(mselect(vm_Mport - vm_Xport, all_enty = "seh2") * pm_conv_TWa_EJ,
-        "SE|Hydrogen|Net Imports (EJ/yr)"),
-      setNames(mselect(vm_Mport - vm_Xport, all_enty = "seel") * pm_conv_TWa_EJ,
-        "SE|Electricity|Net Imports (EJ/yr)"),
-      setNames(mselect(vm_Mport - vm_Xport, all_enty = "seliqsyn") * pm_conv_TWa_EJ,
-        "SE|Liquids|Hydrogen|Net Imports (EJ/yr)"),
-      setNames(mselect(vm_Mport - vm_Xport, all_enty = "segasyn") * pm_conv_TWa_EJ,
-        "SE|Gases|Hydrogen|Net Imports (EJ/yr)"))
+    # SE Trade reporting if exogenous supply curves are on
+    vm_Mport_SC <- readGDX(gdx, "vm_Mport_SC", field = "l", restore_zeros = F)
+
+    if (!is.null(vm_Mport_SC)) {
+
+      vm_Mport_SC <- matchDim( vm_Mport_SC,
+                               vm_Mport,
+                               fill = 0)
+      tmp1 <- mbind(tmp1,
+                    setNames(mselect(vm_Mport - vm_Xport + vm_Mport_SC, all_enty = "seh2") * pm_conv_TWa_EJ,
+                             "SE|Hydrogen|Net Imports (EJ/yr)"),
+                    setNames(mselect(vm_Mport - vm_Xport + vm_Mport_SC, all_enty = "seel") * pm_conv_TWa_EJ,
+                             "SE|Electricity|Net Imports (EJ/yr)"),
+                    setNames(mselect(vm_Mport - vm_Xport + vm_Mport_SC, all_enty = "seliqsyn") * pm_conv_TWa_EJ,
+                             "SE|Liquids|Hydrogen|Net Imports (EJ/yr)"),
+                    setNames(mselect(vm_Mport - vm_Xport + vm_Mport_SC, all_enty = "segasyn") * pm_conv_TWa_EJ,
+                             "SE|Gases|Hydrogen|Net Imports (EJ/yr)"))
+    } else {
+
+          tmp1 <- mbind(tmp1,
+                  setNames(mselect(vm_Mport - vm_Xport, all_enty = "seh2") * pm_conv_TWa_EJ,
+                           "SE|Hydrogen|Net Imports (EJ/yr)"),
+                  setNames(mselect(vm_Mport - vm_Xport, all_enty = "seel") * pm_conv_TWa_EJ,
+                           "SE|Electricity|Net Imports (EJ/yr)"),
+                  setNames(mselect(vm_Mport - vm_Xport, all_enty = "seliqsyn") * pm_conv_TWa_EJ,
+                           "SE|Liquids|Hydrogen|Net Imports (EJ/yr)"),
+                  setNames(mselect(vm_Mport - vm_Xport, all_enty = "segasyn") * pm_conv_TWa_EJ,
+                           "SE|Gases|Hydrogen|Net Imports (EJ/yr)"))
+    }
   }
+
+
+
 
   # SE Demand Flows ----
   # SE|Input|X|Y variables denote the demand of energy carrier X
