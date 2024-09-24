@@ -2748,17 +2748,22 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                           as.numeric(out["DEU", "y2015", "Emi|CO2|Energy|Supply|++|Electricity and Heat (Mt CO2/yr)"])
   }
 
-  # emissions with Grassi Correction (LULUCF emissions adjusted to national LULUCF accounting)
+  # emissions national LULUCF accounting (including carbon sink from existing forests calculated by difference between historic Magpie and UNFCCC data)
 
   p47_LULUCFEmi_GrassiShift <- readGDX(gdx, "p47_LULUCFEmi_GrassiShift", restore_zeros = T, react = "silent")[getRegions(out), getYears(out),]
 
   if (!is.null(p47_LULUCFEmi_GrassiShift)) {
 
-    # variables of which version with Grassi correction should be reported
+
+    # variables of which version with national LULUCF accounting should be added
     vars.lulucf <- c("Emi|GHG (Mt CO2eq/yr)",
                      "Emi|CO2 (Mt CO2/yr)",
                      "Emi|GHG|+++|Land-Use Change (Mt CO2eq/yr)",
-                     "Emi|CO2|+|Land-Use Change (Mt CO2/yr)")
+                     "Emi|CO2|+|Land-Use Change (Mt CO2/yr)",
+                     "Emi|CO2|CDR|Land-Use Change (Mt CO2/yr)",
+                     "Emi|CO2|CDR (Mt CO2/yr)",
+                     "Emi|GHG|Outside ETS and ESR|+|Land-Use Change (Mt CO2eq/yr)",
+                     "Emi|GHG|++|Outside ETS and ESR (Mt CO2eq/yr)")
 
     out.lulucf <- out[,,vars.lulucf]
     # subtract shift of LULUCF emissions to be in line with national accounting
@@ -2773,6 +2778,11 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     names.lulucf <- gsub("\\|\\+\\|", "\\|", names.lulucf )
     names.lulucf <- gsub("\\|\\+\\+\\+\\|", "\\|", names.lulucf )
     getNames(out.lulucf) <- names.lulucf
+
+    # also report carbon sink from existing forests which is the difference between historic Magpie and UNFCCC land-use change emissions
+    out.lulucf <- mbind(out.lulucf,
+                        setNames(p47_LULUCFEmi_GrassiShift * GtC_2_MtCO2,
+                                 "Emi|CO2|CDR|existing forest sink|LULUCF national accounting (Mt CO2/yr)"))
 
     out <- mbind(out, out.lulucf)
   }
