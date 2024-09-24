@@ -2783,6 +2783,11 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   p47_LULUCFEmi_GrassiShift <- readGDX(gdx, "p47_LULUCFEmi_GrassiShift", restore_zeros = T, react = "silent")[getRegions(out), getYears(out),]
   p47_emiLUC <- readGDX(gdx, "p47_emiLUC", restore_zeros = F, react = "silent")
 
+
+  if (is.null(p47_emiLUC)) {
+    rm('p47_emiLUC')
+  }
+
   if (!is.null(p47_LULUCFEmi_GrassiShift)) {
 
     # variables of which version with Grassi correction should be reported
@@ -2797,7 +2802,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     # therefore choose 2050 as some year after cm_startyear)
     # If LULUCF emissions are adjusted via switch cm_regipol_LUC, then apply p47_LULUCFEmi_GrassiShift correction to all years
     # to have linear interpolation between historic emissions values and target emissions values in 2050
-    if (!is.na(p47_emiLUC)) {
+    if (exists('p47_emiLUC')) {
       out.lulucf <- out.lulucf - collapseDim(p47_LULUCFEmi_GrassiShift[,,])*GtC_2_MtCO2
     } else {
       # (note: in this case, the parameter p47_LULUCFEmi_GrassiShift has the same value over all years but is zero before cm_startyear
