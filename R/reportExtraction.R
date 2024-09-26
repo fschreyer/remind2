@@ -181,6 +181,25 @@ grades[is.na(grades)] <- 0
     return(o_aec)
   }
 
+  calcMarExtractionCostsGradeFossilFuels <- function(i_fuelexcum, i_datarog, i_fuelex, sm_DpGJ_2_TDpTWa, igrade) {
+    # Select regional information because parameters for polynomials are only defined for regions
+    # and not at the global level
+
+    tmp_fuelexcum <- i_fuelexcum[which(getRegions(i_fuelexcum) != "GLO"), , ]
+    tmp_fuelex    <- i_fuelex[which(getRegions(i_fuelex) != "GLO"), , igrade]
+
+    o_aec <-
+      collapseDim(
+          i_datarog %>% mselect(polyCoeffCost = "1", all_enty = igrade)
+          + 2 * i_datarog %>% mselect(polyCoeffCost = "2", all_enty = igrade) * tmp_fuelexcum[, , igrade][, , "1"]
+          + 3 * i_datarog %>% mselect(polyCoeffCost = "3", all_enty = igrade) * tmp_fuelexcum[, , igrade][, , "1"]^2
+        ) / sm_DpGJ_2_TDpTWa
+    o_aec[is.na(o_aec)] <- 0
+    # Compute and add global values (as a mean over regions)
+    o_aec <- mbind(o_aec, dimSums(o_aec, dim = 1) / length(getRegions(tmp_fuelexcum)))
+    return(o_aec)
+  }
+
   calcPeProductionNet <- function(i_fuelex, i_cint, i_fuExtrOwnCons, i_pe) {
 
     ownCons <- collapseNames(mselect(fuExtrOwnCons, all_enty = i_pe))
@@ -220,6 +239,18 @@ grades[is.na(grades)] <- 0
       setNames(calcAvgExtractionCostsGradeFossilFuels(fuelex_cum[, t, ], datarog2, fuelex, sm_DpGJ_2_TDpTWa, igrade = "pegas"), "Res|Average Extraction Costs|Gas ($/GJ)"),
       setNames(calcAvgExtractionCostsGradeUranium(fuelex_cum[, t, ], datarog, fuelex, sm_DpGJ_2_TDpTWa, uranium_conv = uranium_conv, igrade = "peur"), "Res|Average Extraction Costs|Uranium ($/GJ)"))
   }
+
+  # Marginal extraction costs
+  tmp9 <- NULL
+  if (is.null(grades)) {
+    tmp9 <- mbind(
+      setNames(calcMarExtractionCostsGradeFossilFuels(fuelex_cum[, t, ], datarog2, fuelex, sm_DpGJ_2_TDpTWa, igrade = "pecoal"),               "Res|Marginal Extraction Costs|Coal ($/GJ)"),
+      setNames(calcMarExtractionCostsGradeFossilFuels(fuelex_cum[, t, ], datarog2, fuelex, sm_DpGJ_2_TDpTWa, igrade = "peoil"),               "Res|Marginal Extraction Costs|Oil ($/GJ)"),
+      setNames(calcMarExtractionCostsGradeFossilFuels(fuelex_cum[, t, ], datarog2, fuelex, sm_DpGJ_2_TDpTWa, igrade = "pegas"),               "Res|Marginal Extraction Costs|Gas ($/GJ)"))
+
+  }
+
+
   # Average supply costs
   tmp3 <- NULL
   tmp3 <- mbind(
@@ -279,7 +310,7 @@ grades[is.na(grades)] <- 0
   ####### add global value #############
   out <- mbind(out, dimSums(out, dim = 1))
 
-  out <- mbind(out, tmp2)
+  out <- mbind(out, tmp2, tmp9)
 
   # add other region aggregations
   if (!is.null(regionSubsetList))
