@@ -2748,7 +2748,8 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                           as.numeric(out["DEU", "y2015", "Emi|CO2|Energy|Supply|++|Electricity and Heat (Mt CO2/yr)"])
   }
 
-  # emissions national LULUCF accounting (including carbon sink from existing forests calculated by difference between historic Magpie and UNFCCC data)
+  # emissions national LULUCF accounting
+  # (including carbon sink from existing forests calculated by difference between historic Magpie and UNFCCC data)
 
   p47_LULUCFEmi_GrassiShift <- readGDX(gdx, "p47_LULUCFEmi_GrassiShift", restore_zeros = T, react = "silent")[getRegions(out), getYears(out),]
 
@@ -2763,7 +2764,8 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                      "Emi|CO2|CDR|Land-Use Change (Mt CO2/yr)",
                      "Emi|CO2|CDR (Mt CO2/yr)",
                      "Emi|GHG|Outside ETS and ESR|+|Land-Use Change (Mt CO2eq/yr)",
-                     "Emi|GHG|++|Outside ETS and ESR (Mt CO2eq/yr)")
+                     "Emi|GHG|++|Outside ETS and ESR (Mt CO2eq/yr)",
+                     "Emi|GHG|AFOLU (Mt CO2eq/yr)")
 
     out.lulucf <- out[,,vars.lulucf]
     # subtract shift of LULUCF emissions to be in line with national accounting
