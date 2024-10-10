@@ -962,9 +962,9 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
   ## Fuel-switching co2 prices based on qm_balFe Marginal
   int2ext <- c(int2ext,
 
-               "Internal|Model Marginal|FSCP|balFe|fedie (US$2005/tCO2)" = "FE|Transport|Liquids|Hydrogen (EJ/yr)",
-               "Internal|Model Marginal|FSCP|balFe|fehos (US$2005/tCO2)" = "FE|Industry|Liquids|Hydrogen (EJ/yr)",
-               "Internal|Model Marginal|FSCP|balFe|fegas (US$2005/tCO2)" = "FE|Industry|Gases|Hydrogen (EJ/yr)"
+               "Internal|Model Marginal|FSCP|balFe|fedie (US$2005/tCO2)" = "FE|Transport|Liquids|Fossil (EJ/yr)",
+               "Internal|Model Marginal|FSCP|balFe|fehos (US$2005/tCO2)" = "FE|Industry|Liquids|Fossil (EJ/yr)",
+               "Internal|Model Marginal|FSCP|balFe|fegas (US$2005/tCO2)" = "FE|Industry|Gases|Fossil (EJ/yr)"
 
 
   )
