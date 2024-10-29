@@ -90,20 +90,125 @@ reportSE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
   vm_prodSe    <- vm_prodSe[, y, ]
   storLoss  <- storLoss[, y, ]
   p_macBase <- p_macBase[, y, ]
+  #  read coupled production parameter
   ####### fix negative values to 0 ##################
   #### adjust regional dimension of dataoc
   dataoc <- new.magpie(getRegions(vm_prodSe), getYears(pm_prodCouple), magclass::getNames(pm_prodCouple), fill = 0)
   dataoc[getRegions(pm_prodCouple), , ] <- pm_prodCouple
   getSets(dataoc) <- getSets(pm_prodCouple)
 
+
+  # # own consumption of power plants
+  #
+  #
+  # # create own consumption object
+  # own_cons_share <- new.magpie(getRegions(dataoc),
+  #                              NULL,
+  #                              names = c("pecoal.seel.pc.seel",
+  #                                        "pecoal.seel.igcc.seel",
+  #                                        "pecoal.seel.igccc.seel",
+  #                                        "pecoal.seel.coalchp.seel",
+  #
+  #                                        "pegas.seel.ngcc.seel",
+  #                                        "pegas.seel.ngccc.seel",
+  #                                        "pegas.seel.ngt.seel",
+  #                                        "pegas.seel.gaschp.seel",
+  #
+  #                                        "peoil.seel.dot.seel",
+  #
+  #                                        "peur.seel.tnrs.seel",
+  #                                        "peur.seel.fnrs.seel",
+  #
+  #                                        "pebiolc.seel.biochp.seel",
+  #                                        "pebiolc.seel.bioigcc.seel",
+  #                                        "pebiolc.seel.bioigccc.seel",
+  #
+  #                                        "seh2.seel.h2turb.seel",
+  #                                        "seh2.seel.h2turbVRE.seel"))
+  #
+  # # assign corresponding dimension names based on pm_prodCouple
+  # getSets(own_cons_share)[3] <- "all_enty"
+  # getSets(own_cons_share)[4] <- "all_enty1"
+  # getSets(own_cons_share)[5] <- "all_te"
+  # getSets(own_cons_share)[6] <- "all_enty2"
+  #
+  # # assign values based on average 1990-2023 data for Germany
+  # # data from AGEB, https://ag-energiebilanzen.de/wp-content/uploads/2024/04/STRERZ_Abg_02_2024_korr.xlsx
+  # own_cons_share[,,"pecoal.seel"] <- 0.08
+  # own_cons_share[,,"pegas.seel"] <- 0.04
+  # own_cons_share[,,"peoil.seel"] <- 0.1
+  # own_cons_share[,,"peur.seel"] <- 0.05
+  # own_cons_share[,,"pebiolc.seel"] <- 0.07
+  # own_cons_share[,,"seh2.seel"] <- 0.04
+  #
+  #
+  #
+  # # dataoc_orig <- dataoc
+  # # dataoc <- dataoc_orig
+  #
+  #
+  #
+  # oc2te_w_selfOC <- own_cons_share %>%
+  #                 as_tibble() %>%
+  #                 filter(region %in% getRegions(own_cons_share)[1]) %>%
+  #                 select(all_enty,all_enty1,all_te,all_enty2)
+  #
+  # dataoc <- mbind(dataoc,-own_cons_share)
+  # oc2te <- rbind(oc2te,oc2te_w_selfOC)
+
+
+  # retrieve all technologies with own consumption (dataoc < 0)  for which
+  # output energy carrier and consumption energy carrier are different
+  all_te_oc_diffEnty <- dataoc %>%
+                          as_tibble() %>%
+                          filter(all_regi %in% getRegions(dataoc)[1],
+                                 value < 0,
+                                 as.character(all_enty1) != as.character(all_enty2)) %>%
+                          pull(all_te) %>%
+                          droplevels()
+
+
+  # Filter coupled production share for calculating net SE production (after own consumption).
+  # Set all negative coupled production share of technologies for which
+  # output energy carrier and consumption energy carrier are different to zero.
+
+  # This parameter is used for calculating net electricity generation variables.
+  dataoc_w_selfOC <- dataoc
+  dataoc_w_selfOC[,,  intersect( all_te_oc_diffEnty,getNames(dataoc_w_selfOC, dim=3))] <- 0
+
+
+  # remove all negative values (own consumption of secondary energy),
+  # only keep positive value which represent co-production of secondary energy
+  # This parameter is used for calculating the standard (gross) SE production variables
   dataoc[dataoc < 0] <- 0
+
+
+
   ###### include se2se technologies in summation
   te_pese2se <- c(pe2se$all_te, se2se$all_te)
 
   ####### internal function for reporting ###########
 
-  se.prod <- function(vm_prodSe, dataoc, oc2te, entySe, enty.input, se.output, te = te_pese2se,
+  # se.prod(vm_prodSe, dataoc, oc2te, entySe, append(entyPe, "seh2"), "seel",   name = "SE|Electricity (EJ/yr)"), # seh2 to account for se2se production once we add h2 to elec technology
+  # Function to calculate SE production variables.
+  # Arguments:
+  # vm_prodSe: SE production contained in REMIND variables vm_prodSe.
+  # dataoc: Coupled SE production (positive values) or SE own consumption (negative values) as a share of the primary output (vm_prodSe) of a technology.
+  # oc2te: Mapping of technologies with second product or own consumption:
+  # (enty,enty2,te,enty3) where enty is energy input, enty2 is first energy output, te is the technology and enty3 is the second energy output or own consumption.
+  # entySe: secondary energy carriers in the model
+  # enty.input: input energy carriers of technologies to be considered for the SE variable calculated by the function.
+  # se.output: output energy carriers of technologies to be considered for the SE variable calculated by the function.
+  # te: technologies to be considered for the SE variable calculated by the function.
+  # name: Name of the SE variables calculated by the function.
+  # storageLoss: Electricity lost in electricity storage. Only needed for calculation of wind and solar power generation variables.
+  # all_pety: primary energy carriers in the model.
+  # storageLossOnly: Boolean to decide whether only electricity storage loss should be calculated for this technology.
+  # Output:
+  # SE Variables of Reporting.
+  se.prod <- function(vm_prodSe, dataoc, oc2te, entySe, enty.input, se.output,  te = te_pese2se,
                       name = NULL, storageLoss = storLoss, all_pety = entyPe, storageLossOnly = F) {
+
 
     if (storageLossOnly && is.null(storageLoss)) {
       return(NULL)
@@ -118,12 +223,21 @@ reportSE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
       warning(paste("se.output ", setdiff(se.output, abind::abind(all_pety, entySe)), " is not element of entyPe or entySe"))
     }
 
+
     if (storageLossOnly == F) {
       ## secondary energy production with secarrier as a main product
       x1 <- dimSums(mselect(vm_prodSe, all_enty = enty.input, all_enty1 = se.output, all_te = te), dim = 3, na.rm = T)
       ## secondary energy production with secarrier as a couple product
       ## identify all oc techs with secarrier as a couple product
       sub_oc2te <- oc2te[(oc2te$all_enty %in% enty.input) & (oc2te$all_enty1 %in% entySe) & (oc2te$all_enty2 %in% se.output) & (oc2te$all_te %in% te), ]
+      # calculate coupled production by multiplying share of coupled production with output of primary product (vm_prodSe)
+      # If dataoc, the coupled production share, is negative this refers to energy consumption of energy system technologies.
+      # For example, biogas plants with carbon and capture use electricity for the capture process. Moreover, own consumption of
+      # power plants is also considered (plant consumes same energy carrier as its output),
+      # e.g. electricity consumption of coal power plants etc.
+      # If dataoc, the coupled production share, is positive this refers to the co-production of this SE.
+      # For example, CHP-plants have a primary product of electricity (contained in vm_prodSe(chp)) and
+      # a secondary product of heat (obtained by dataoc(chp)*vm_prodSe(chp)).
       x2 <- dimSums(vm_prodSe[sub_oc2te] * dataoc[sub_oc2te], dim = 3, na.rm = T)
     }
 
@@ -237,6 +351,52 @@ reportSE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
       se.prodLoss(vm_prodSe, dataoc, oc2te, entySe, "pewin", "seel", te = "wind",   name = "SE|Electricity|Curtailment|+|Wind (EJ/yr)")
     )
   }
+
+  ## calculate net electricity generation
+  # subtract fixed share of own consumption per type of power plant from gross generation reported by model in vm_prodSe
+  tmp1 <- mbind(tmp1,
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, append(entyPe, "seh2"), "seel",   name = "SE|Net|Electricity (EJ/yr)"), # seh2 to account for se2se production once we add h2 to elec technology
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, entyPe, "seel", te = techp,       name = "SE|Net|Electricity|Combined Heat and Power w/o CC (EJ/yr)"),
+
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, pebio, "seel",                    name = "SE|Net|Electricity|+|Biomass (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, pebio, "seel", te = teccs,        name = "SE|Net|Electricity|Biomass|+|w/ CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, pebio, "seel", te = tenoccs,      name = "SE|Net|Electricity|Biomass|+|w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, pebio, "seel", te = "bioigccc",   name = "SE|Net|Electricity|Biomass|++|Gasification Combined Cycle w/ CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, pebio, "seel", te = "bioigcc",    name = "SE|Net|Electricity|Biomass|++|Gasification Combined Cycle w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, pebio, "seel", te = "biochp",     name = "SE|Net|Electricity|Biomass|++|Combined Heat and Power w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, pebio, "seel", te = setdiff(pe2se$all_te, c("bioigccc", "bioigcc", "biochp")),
+                        name = "SE|Net|Electricity|Biomass|++|Other (EJ/yr)"),
+
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel",                 name = "SE|Net|Electricity|+|Coal (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel", te = teccs,     name = "SE|Net|Electricity|Coal|+|w/ CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel", te = tenoccs,   name = "SE|Net|Electricity|Coal|+|w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel", te = "igcc",    name = "SE|Net|Electricity|Coal|++|Gasification Combined Cycle w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel", te = "igccc",   name = "SE|Net|Electricity|Coal|++|Gasification Combined Cycle w/ CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel", te = "pc",      name = "SE|Net|Electricity|Coal|++|Pulverised Coal w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel", te = "coalchp", name = "SE|Net|Electricity|Coal|++|Combined Heat and Power w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pecoal", "seel", te = setdiff(pe2se$all_te, c("igcc", "igccc", "pc", "coalchp")),
+                        name = "SE|Net|Electricity|Coal|++|Other (EJ/yr)"),
+
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pegas", "seel",                  name = "SE|Net|Electricity|+|Gas (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pegas", "seel", te = teccs,      name = "SE|Net|Electricity|Gas|+|w/ CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pegas", "seel", te = tenoccs,    name = "SE|Net|Electricity|Gas|+|w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pegas", "seel", te = "ngcc",     name = "SE|Net|Electricity|Gas|++|Combined Cycle w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pegas", "seel", te = "ngccc",    name = "SE|Net|Electricity|Gas|++|Combined Cycle w/ CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pegas", "seel", te = "ngt",      name = "SE|Net|Electricity|Gas|++|Gas Turbine (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "pegas", "seel", te = "gaschp",   name = "SE|Net|Electricity|Gas|++|Combined Heat and Power w/o CC (EJ/yr)"),
+
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "seh2", "seel",                   name = "SE|Net|Electricity|+|Hydrogen (EJ/yr)"),
+
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "peoil", "seel",                  name = "SE|Net|Electricity|+|Oil (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "peoil", "seel", te = tenoccs,    name = "SE|Net|Electricity|Oil|w/o CC (EJ/yr)"),
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "peoil", "seel", te = "dot",      name = "SE|Net|Electricity|Oil|DOT (EJ/yr)"),
+
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, entyPe, "seel", te = terenew_nobio,
+                        name = "SE|Net|Electricity|Non-Biomass Renewables (EJ/yr)"),
+
+                se.prod(vm_prodSe, dataoc_w_selfOC, oc2te, entySe, "peur", "seel",                   name = "SE|Net|Electricity|+|Nuclear (EJ/yr)"))
+
+
 
   ## Gases
   if (!(is.null(vm_macBase) & is.null(vm_emiMacSector))) {
