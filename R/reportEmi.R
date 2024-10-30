@@ -155,6 +155,19 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   # parameter to calculate coupled production
   pm_prodCouple <- readGDX(gdx, "pm_prodCouple", field = "l", restore_zeros = F)
 
+  # set of pm_prodCouple dimensions for self consumption of power plants,
+  # these elements should not be included in the calculation of coupled product emissions
+  pc2te_selfCons <- readGDX(gdx, "pc2te_selfCons")
+  pc2te_selfCons.magclassDim <- paste(pc2te_selfCons$all_enty,
+                                       pc2te_selfCons$all_enty1,
+                                       pc2te_selfCons$all_te,
+                                       pc2te_selfCons$all_enty2,
+                                       sep = ".")
+  # remove self consumption elements of pc2te_selfCons from coupled production parameter
+  pm_prodCouple <- pm_prodCouple[,, setdiff(getNames(pm_prodCouple),
+                                                pc2te_selfCons.magclassDim)]
+
+
   ### Carbon management variables
   # total captured CO2
   vm_co2capture <- readGDX(gdx, "vm_co2capture", field = "l", restore_zeros = F)[, t, ]
