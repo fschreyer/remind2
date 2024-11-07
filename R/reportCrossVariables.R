@@ -438,12 +438,28 @@ reportCrossVariables <- function(gdx, output = NULL, regionSubsetList = NULL,
     tmp <- setItems(tmp, 3, "SE|Electricity|Coal|w/o CC|Other Fossil Adjusted (EJ/yr)")
     out <- mbind(out, tmp)
 
+    # SE|Net|Electricity|Coal|w/o CC|Other Fossil Adjusted = SE|Net|Electricity|Coal|w/o CC -
+    # SE|Electricity|Other Fossil|Other Fossil Adjusted;
+    tmp <- output[, , "SE|Net|Electricity|Coal|w/o CC (EJ/yr)"] -
+      out[, , "SE|Electricity|Other Fossil|Other Fossil Adjusted (EJ/yr)"]
+    tmp[tmp < 0] <- 0
+    tmp <- setItems(tmp, 3, "SE|Net|Electricity|Coal|w/o CC|Other Fossil Adjusted (EJ/yr)")
+    out <- mbind(out, tmp)
+
     # SE|Electricity|Coal|Other Fossil Adjusted = SE|Electricity|Coal -
     # SE|Electricity|Other Fossil|Other Fossil Adjusted;
     tmp <- output[, , "SE|Electricity|Coal (EJ/yr)"] -
       out[, , "SE|Electricity|Other Fossil|Other Fossil Adjusted (EJ/yr)"]
     tmp[tmp < 0] <- 0
     tmp <- setItems(tmp, 3, "SE|Electricity|Coal|Other Fossil Adjusted (EJ/yr)")
+    out <- mbind(out, tmp)
+
+    # SE|Net|Electricity|Coal|Other Fossil Adjusted = SE|Net|Electricity|Coal -
+    # SE|Electricity|Other Fossil|Other Fossil Adjusted;
+    tmp <- output[, , "SE|Net|Electricity|Coal (EJ/yr)"] -
+      out[, , "SE|Electricity|Other Fossil|Other Fossil Adjusted (EJ/yr)"]
+    tmp[tmp < 0] <- 0
+    tmp <- setItems(tmp, 3, "SE|Net|Electricity|Coal|Other Fossil Adjusted (EJ/yr)")
     out <- mbind(out, tmp)
 
     # OtherFossilShare =  SE|Electricity|Other Fossil|Other Fossil Adjusted /
