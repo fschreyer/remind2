@@ -1080,10 +1080,10 @@ reportPrices <- function(gdx, output=NULL, regionSubsetList=NULL,
   q33_DAC_emi_load <- readGDX(gdx, "q33_DAC_emi", field = "m", restore_zeros = F)
   q33_DAC_emi[,getYears(q33_DAC_emi_load),] <- q33_DAC_emi_load
   q_limitCapCCS <- readGDX(gdx, "q_limitCapCCS", field = "m", restore_zeros = F)
+  q_limitCapCCS <- matchDim(collapseNames(q_limitCapCCS),budget.m, dim = c(1,2), fill = 0)
 
 
   Marginals <- NULL
-
   Marginals <- mbind(Marginals,
                      # divide marginal by marginal of budget equation to get to trUSD/GtC
                      # (as marginal of equation is expressed per unit welfare, which is the objective function)
