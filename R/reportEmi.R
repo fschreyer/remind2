@@ -2292,11 +2292,11 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     out <- mbind(
       out,
       setNames(
-        max_geolStorage[, , "ccsinjeon"] * GtC_2_MtCO2,
+        dimSums(max_geolStorage[, , "ccsinjeon"], dim = 3) * GtC_2_MtCO2,
         "Carbon Management|Storage|Maximum annual CO2 storage potential|Onshore (Mt CO2/yr)"
       ),
       setNames(
-        max_geolStorage[, , "ccsinjeoff"] * GtC_2_MtCO2,
+        dimSums(max_geolStorage[, , "ccsinjeoff"], dim = 3) * GtC_2_MtCO2,
         "Carbon Management|Storage|Maximum annual CO2 storage potential|Offshore (Mt CO2/yr)"
       )
     )
@@ -2316,12 +2316,12 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     out <- mbind(
       out,
       setNames(
-        dimSums(vm_co2CCS[, , "ccsinjeon"], dim = 3, na.rm = TRUE) / max_geolStorage[, , "ccsinjeon"] * 100,
+        dimSums(vm_co2CCS[, , "ccsinjeon"], dim = 3, na.rm = TRUE) / dimSums(max_geolStorage[, , "ccsinjeon"], dim = 3) * 100,
         "Carbon Management|Storage|Share of annual potential used|Onshore (%)"
       ) %>%
         ifelse(is.finite(.), ., 0),
       setNames(
-        dimSums(vm_co2CCS[, , "ccsinjeoff"], dim = 3, na.rm = TRUE) / max_geolStorage[, , "ccsinjeoff"] * 100,
+        dimSums(vm_co2CCS[, , "ccsinjeoff"], dim = 3, na.rm = TRUE) / dimSums(max_geolStorage[, , "ccsinjeoff"], dim = 3) * 100,
         "Carbon Management|Storage|Share of annual potential used|Offshore (%)"
       ) %>%
         ifelse(is.finite(.), ., 0)
