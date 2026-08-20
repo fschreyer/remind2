@@ -9,7 +9,7 @@ params:
   gdx: "fulldata.gdx"
   warning: false
   message: false
-  figWidth: 8
+  figWidth: 12
 ---
 
 <style>
@@ -96,9 +96,106 @@ mipIterationsSurplus <- function(plotData,
 
 ```
 
-## Surplus on commodity market
+## Surplus convergence history {.tabset}
+
+For each traded good, the worst residual market surplus over iterations (`p80_surplusMax_iter`) is checked against two criteria in REMIND's `postsolve.gms`:
+1. **Primary check (until 2100)**: worst surplus up to 2100 against tolerance (`p80_surplusMaxTolerance`).
+2. **Secondary check (until 2150)**: worst surplus up to 2150 against 10x tolerance (`10 * p80_surplusMaxTolerance`).
+
+Log y-axis: the good whose line stays above its tolerance longest is the one holding up trade convergence. (Values that have reached exactly zero are dropped, as they cannot be shown on a log scale.)
+
+### Primary check (until 2100, 1x tolerance)
+
+```{r conv_history_2100, results = "asis", fig.height=6}
+
+sm <- mip::getPlotData("p80_surplusMax_iter", params$gdx)
+
+if (nrow(sm) == 0) {
+  cat("p80_surplusMax_iter is empty in this gdx.")
+} else {
+  sm <- sm %>%
+    rename("value" = "p80_surplusMax_iter") %>%
+    mutate("iteration" := as.numeric(as.character(.data$iteration)),
+           "tall" := as.numeric(as.character(.data$tall)))
+
+  horizon <- if (2100 %in% sm$tall) 2100 else max(sm$tall)
+
+  smtol <- mip::getPlotData("p80_surplusMaxTolerance", params$gdx) %>%
+    rename("tol" = "p80_surplusMaxTolerance") %>%
+    select("all_enty", "tol")
+
+  d <- sm %>%
+    filter(.data$tall == horizon) %>%
+    left_join(smtol, by = "all_enty") %>%
+    filter(.data$value > 0) %>%
+    mutate("tooltip" = paste0(.data$all_enty,
+                              "<br>Iteration: ", .data$iteration,
+                              "<br>Worst surplus until ", horizon, ": ", round(.data$value, 4),
+                              "<br>Tolerance (1x): ", round(.data$tol, 4),
+                              "<br>", ifelse(.data$value > .data$tol, "outside tolerance", "within tolerance")))
+
+  hlines <- smtol %>% filter(.data$all_enty %in% unique(d$all_enty))
+
+  p <- ggplot(d, aes_(x = ~iteration, y = ~value, group = 1, text = ~tooltip)) +
+    geom_hline(data = hlines, aes_(yintercept = ~tol), linetype = "dashed", color = "#F8766D") +
+    geom_line(alpha = 0.6) +
+    geom_point(size = 0.8, alpha = 0.7) +
+    facet_wrap(~all_enty, scales = "free_y") +
+    scale_y_log10() +
+    theme_bw() +
+    labs(x = "iteration", y = paste0("worst surplus until ", horizon, " (log scale)"))
+
+  ggplotly(p, tooltip = c("text"))
+}
+
+```
+
+### Secondary check (until 2150, 10x tolerance)
+
+```{r conv_history_2150, results = "asis", fig.height=6}
+
+if (nrow(sm) == 0) {
+  cat("p80_surplusMax_iter is empty in this gdx.")
+} else {
+  horizon2150 <- if (2150 %in% sm$tall) 2150 else max(sm$tall)
+
+  smtol2150 <- smtol %>%
+    mutate("tol10" = .data$tol * 10)
+
+  d2150 <- sm %>%
+    filter(.data$tall == horizon2150) %>%
+    left_join(smtol2150, by = "all_enty") %>%
+    filter(.data$value > 0) %>%
+    mutate("tooltip" = paste0(.data$all_enty,
+                              "<br>Iteration: ", .data$iteration,
+                              "<br>Worst surplus until ", horizon2150, ": ", round(.data$value, 4),
+                              "<br>10x Tolerance: ", round(.data$tol10, 4),
+                              "<br>", ifelse(.data$value > .data$tol10, "outside 10x tolerance", "within 10x tolerance")))
+
+  hlines2150 <- smtol2150 %>% filter(.data$all_enty %in% unique(d2150$all_enty))
+
+  p2150 <- ggplot(d2150, aes_(x = ~iteration, y = ~value, group = 1, text = ~tooltip)) +
+    geom_hline(data = hlines2150, aes_(yintercept = ~tol10), linetype = "dashed", color = "#F8766D") +
+    geom_line(alpha = 0.6) +
+    geom_point(size = 0.8, alpha = 0.7) +
+    facet_wrap(~all_enty, scales = "free_y") +
+    scale_y_log10() +
+    theme_bw() +
+    labs(x = "iteration", y = paste0("worst surplus until ", horizon2150, " (log scale)"))
+
+  ggplotly(p2150, tooltip = c("text"))
+}
+
+```
+
+## Surplus on commodity market {.tabset}
 
 - p80_surplus
+
+Residual market surplus (supply minus demand) for each traded good; it must fall inside
+the tolerance band for trade to converge. The tabs show the same data four ways — most
+include the tolerance band as a shaded rectangle, so a good whose line leaves the band
+is not yet cleared.
 
 ```{r p80_surplus___READ, echo=FALSE, include=FALSE}
 
@@ -114,6 +211,8 @@ p80_surplusMaxTolerance <-
 
 ### all goods per iteration
 <!-- ### x: time, slider: iter, color: enty -->
+
+*All goods on one chart — x = model year, one line per good, slider over iterations. Watch the lines settle as the run converges.*
 
 ```{r  results = "asis"}
 
@@ -132,6 +231,8 @@ htmltools::tagList(p)
 ### good per iteration
 <!-- ### x: time, slider: iter, facet: enty -->
 
+*One facet per good, x = model year, slider over iterations — the same data separated so each good's own scale is visible.*
+
 ```{r}
 
 mipIterationsSurplus(
@@ -148,6 +249,8 @@ mipIterationsSurplus(
 
 ### good per period
 <!-- ### x: iter, slider: time, facet: enty -->
+
+*One facet per good, x = iteration, slider over model years — the convergence view: each curve should flatten as iterations proceed.*
 
 ```{r  results = "asis"}
 
@@ -166,6 +269,8 @@ mipIterationsSurplus(
 
 ### good per period and iteration
 <!-- ### x: iter, facets: time -->
+
+*One facet per model year, x = iteration (no slider) — the full convergence trajectory for every period at once.*
 
 ```{r  results = "asis"}
 
@@ -202,9 +307,12 @@ for (i in p) {
 ```
 
 
-## Trade price
+## Trade price {.tabset}
 
 - p80_pvp_itr
+
+The Nash price (Negishi weight) of each traded good over iterations. As surpluses clear,
+these prices should stop moving between iterations. Same four views as above.
 
 ```{r p80_pvp_itr___READ, echo=FALSE, include=FALSE}
 
@@ -217,6 +325,8 @@ str(p80_pvp_itr)
 
 ### all goods per iteration
 <!-- ### x: time, slider: iter, color: enty -->
+
+*All goods on one chart — x = model year, one line per good, slider over iterations. Watch the lines settle as the run converges.*
 
 ```{r  results = "asis"}
 
@@ -235,6 +345,8 @@ htmltools::tagList(p)
 ### good per iteration
 <!-- ### x: time, slider: iter, facet: enty -->
 
+*One facet per good, x = model year, slider over iterations — the same data separated so each good's own scale is visible.*
+
 ```{r  results = "asis"}
 
 p <- mip::mipIterations(
@@ -252,6 +364,8 @@ htmltools::tagList(p)
 
 ### good per period
 <!-- ### x: iter, slider: time, facet: enty -->
+
+*One facet per good, x = iteration, slider over model years — the convergence view: each curve should flatten as iterations proceed.*
 
 ```{r  results = "asis"}
 
@@ -272,6 +386,8 @@ htmltools::tagList(p)
 ### good per period and iteration
 <!-- ### x: iter, facets: time -->
 
+*One facet per model year, x = iteration (no slider) — the full convergence trajectory for every period at once.*
+
 ```{r  results = "asis"}
 
 p <- mip::mipIterations(
@@ -290,7 +406,11 @@ for (i in p) {
 
 ```
 
-## Price not discounted
+## Price not discounted {.tabset}
+
+The trade prices above re-expressed without the intertemporal discount factor (each good
+relative to the `good` numeraire), so price *levels* are comparable across periods. Same
+four views.
 
 ```{r results = "asis", echo=FALSE, include=FALSE}
 
@@ -318,6 +438,8 @@ price_not_discounted_itr <-
 ### all goods per iteration
 <!-- ### x: time, slider: iter, color: enty -->
 
+*All goods on one chart — x = model year, one line per good, slider over iterations. Watch the lines settle as the run converges.*
+
 ```{r  results = "asis"}
 
 p <- mip::mipIterations(
@@ -334,6 +456,8 @@ htmltools::tagList(p)
 
 ### good per iteration
 <!-- ### x: time, slider: iter, facet: enty -->
+
+*One facet per good, x = model year, slider over iterations — the same data separated so each good's own scale is visible.*
 
 ```{r  results = "asis"}
 
@@ -352,6 +476,8 @@ htmltools::tagList(p)
 
 ### good per period
 <!-- ### x: iter, slider: time, facet: enty -->
+
+*One facet per good, x = iteration, slider over model years — the convergence view: each curve should flatten as iterations proceed.*
 
 ```{r  results = "asis"}
 
@@ -373,6 +499,8 @@ htmltools::tagList(p)
 ### good per period and iteration
 <!-- ### x: iter, facets: time -->
 
+*One facet per model year, x = iteration (no slider) — the full convergence trajectory for every period at once.*
+
 ```{r  results = "asis"}
 
 p <- mip::mipIterations(
@@ -391,7 +519,12 @@ for (i in p) {
 
 ```
 
-## Prices and surplus in one plot
+## Prices and surplus in one plot {.tabset}
+
+Surplus and (undiscounted) price overlaid for each good, so you can see cause and effect
+together: when the price stops moving the surplus should close. The `iter+1/+2/+3`
+colours show the same series shifted forward, to check whether a price change in one
+iteration clears the surplus a few iterations later.
 
 ```{r  results = "asis", echo=FALSE, include=FALSE}
 
@@ -400,7 +533,7 @@ prices_and_surplus <-
             price_not_discounted_itr,
             by = c("tall" = "ttot", "all_enty", "iteration")) %>%
   filter(!is.na(p80_pvp_itr_no_discount)) %>%
-  reshape2::melt(id.vars = c(1, 2, 3))
+  tidyr::pivot_longer(c("p80_surplus", "p80_pvp_itr_no_discount"), names_to = "variable")
 
 # calculate iteration +1 and +2
 

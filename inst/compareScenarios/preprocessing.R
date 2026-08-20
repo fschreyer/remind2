@@ -25,7 +25,7 @@ pCapVariables <- tribble(
   "FE|Transport", "GJ/yr/pCap", 1e9,
   "FE|Buildings", "GJ/yr/pCap", 1e9,
   "FE|Industry", "GJ/yr/pCap", 1e9,
-  "FE|Transport|Pass with bunkers", "GJ/yr/pCap", 1e9,
+  "FE|Transport|Pass", "GJ/yr/pCap", 1e9,
   "FE|Transport|Bunkers|Pass|International Aviation", "GJ/yr/pCap", 1e9,
   "FE|Transport|Pass|Domestic Aviation", "GJ/yr/pCap", 1e9,
   "FE|Transport|Pass|Rail", "GJ/yr/pCap", 1e9,
@@ -63,7 +63,7 @@ pCapVariables <- tribble(
   "UE|Buildings|Heating|Solids", "GJ/yr/pCap", 1e9,
   "UE|Buildings|Heating", "GJ/yr/pCap", 1e9,
   "ES|Buildings|Floor Space", "m2/pCap", 1e9,
-  "ES|Transport|Pass with bunkers", "k pkm/yr/pCap", 1e6, # use kilo-passenger-kilometer to prevent too large numbers in the plots
+  "ES|Transport|Pass", "k pkm/yr/pCap", 1e6, # use kilo-passenger-kilometer to prevent too large numbers in the plots
   "ES|Transport|Pass|Short-Medium distance", "k pkm/yr/pCap", 1e6, # use kilo-passenger-kilometer to prevent too large numbers in the plots
   "ES|Transport|Pass|Aviation", "k pkm/yr/pCap", 1e6,
   "ES|Transport|Pass|Domestic Aviation", "k pkm/yr/pCap", 1e6,
@@ -77,7 +77,7 @@ pCapVariables <- tribble(
   "ES|Transport|Pass|Non-motorized|Cycle", "k pkm/yr/pCap", 1e6,
   "ES|Transport|Pass|Non-motorized|Walk", "k pkm/yr/pCap", 1e6,
   "ES|Transport|Pass|non-LDV", "k pkm/yr/pCap", 1e6,
-  "ES|Transport|Freight with bunkers", "k tkm/yr/pCap", 1e6,
+  "ES|Transport|Freight", "k tkm/yr/pCap", 1e6,
   "ES|Transport|Freight|Short-Medium distance", "k tkm/yr/pCap", 1e6,
   "ES|Transport|Freight|Road", "k tkm/yr/pCap", 1e6,
   "ES|Transport|Freight|Rail", "k tkm/yr/pCap", 1e6,

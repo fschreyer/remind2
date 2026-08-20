@@ -1,0 +1,228 @@
+---
+title: "Implicit PE price target convergence"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+params:
+  gdx: "fulldata.gdx"
+  warning: false
+  message: false
+  figWidth: 12
+---
+
+<style>
+  #header {
+    display: none !important
+  }
+  .main-container {
+    max-width: 95% !important;
+  }
+  .toc-content {
+    padding-left: 0px !important;
+  }
+  .svg-container {
+    margin: auto !important;
+  }
+</style>
+
+```{r loading_libraries, include=FALSE}
+
+library(dplyr)
+library(ggplot2)
+library(gdx)
+library(mip)
+library(plotly)
+library(remind2)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  error = TRUE,
+  fig.width = params$figWidth,
+  message = params$message,
+  warning = params$warning
+)
+
+```
+
+```{r setup, echo=FALSE, include=FALSE}
+
+emptyMsg <- function(msg) {
+  cat(msg)
+}
+
+# getPlotData() errors when a symbol is entirely absent from the gdx (the price-target
+# symbols are only declared when the module is active). Return a 0-row frame instead so
+# the nrow() == 0 guards below handle the "not active" case gracefully.
+getPlotDataSafe <- function(var, gdx) {
+  tryCatch(mip::getPlotData(var, gdx), error = function(e) data.frame())
+}
+
+buildLabel <- function(df) {
+  idx <- setdiff(names(df), c("iteration", "ttot", "value"))
+  if (length(idx) == 0) return(rep("target", nrow(df)))
+  do.call(paste, c(df[idx], sep = " · "))
+}
+
+# tolerance hardcoded to 0.05 (5%) in regiCarbonPrice/postsolve.gms.
+tol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_implicitPePriceTarget_tolerance", react = "silent")))
+if (length(tol) == 0 || is.na(tol)) tol <- 0.05
+
+dev <- getPlotDataSafe("p47_implicitPePrice_dev_iter", params$gdx)
+tax <- getPlotDataSafe("p47_implicitPePriceTax_iter", params$gdx)
+
+if (nrow(dev) > 0) {
+  dev <- dev %>%
+    rename("value" = "p47_implicitPePrice_dev_iter") %>%
+    mutate(
+      "iteration" := as.numeric(as.character(.data$iteration)),
+      "ttot" := as.numeric(as.character(.data$ttot))
+    )
+  dev$label <- buildLabel(dev)
+}
+if (nrow(tax) > 0) {
+  tax <- tax %>%
+    rename("value" = "p47_implicitPePriceTax_iter") %>%
+    mutate(
+      "iteration" := as.numeric(as.character(.data$iteration)),
+      "ttot" := as.numeric(as.character(.data$ttot))
+    )
+  tax$label <- buildLabel(tax)
+}
+
+```
+
+The implicit PE price target adjusts a tax/subsidy on a primary-energy carrier until
+the achieved price matches the target. The criterion requires the **price deviation to
+be below +-`r round(100 * tol, 2)`%** (`|p47_implicitPePrice_dev| <= `r tol``) for every
+region / carrier / period.
+
+Two cases are *excluded* from the check (see `pm_implicitPePrice_ignConv`): a
+non-existent price (carrier not used), or a price that has not changed for the last 3
+iterations. Those show up in the final-iteration summary at the bottom.
+
+## Convergence summary
+
+Per iteration, the largest absolute PE price deviation across all targets, versus the
+tolerance (dashed). Green = every target within tolerance, red = at least one outside.
+
+```{r convsummary, results = "asis"}
+
+if (nrow(dev) == 0) {
+  emptyMsg("No implicit PE price target active in this run (p47_implicitPePrice_dev_iter is empty).")
+} else {
+  s <- dev %>%
+    group_by(.data$iteration) %>%
+    summarise("worst" = max(abs(.data$value)), .groups = "drop") %>%
+    mutate(
+      "converged" = ifelse(.data$worst > tol, "no", "yes"),
+      "tooltip" = paste0("Iteration: ", .data$iteration,
+                         "<br>Max |deviation|: ", round(100 * .data$worst, 2), "%<br>",
+                         ifelse(.data$worst > tol,
+                                paste0("not converged (> ", round(100 * tol, 2), "%)"),
+                                "converged"))
+    )
+
+  p <- ggplot(s, aes_(x = ~iteration, y = ~worst, group = 1, text = ~tooltip)) +
+    geom_hline(yintercept = tol, linetype = "dashed", color = "grey40") +
+    geom_line(alpha = 0.6) +
+    suppressWarnings(geom_point(aes_(fill = ~converged), size = 2, shape = 21, color = "white")) +
+    scale_fill_manual(values = c("yes" = "#00BFC4", "no" = "#F8766D")) +
+    scale_y_continuous(labels = scales::percent) +
+    theme_bw() +
+    labs(x = "iteration", y = "worst |price deviation|")
+
+  ggplotly(p, tooltip = c("text"))
+}
+
+```
+
+## Price deviation per target
+
+Deviation over iterations, one panel per region / carrier. Dashed lines mark the
++-`r round(100 * tol, 2)`% tolerance band; colour distinguishes the target period.
+
+```{r deviation, results = "asis"}
+
+if (nrow(dev) == 0) {
+  emptyMsg("No implicit PE price target active in this run (p47_implicitPePrice_dev_iter is empty).")
+} else {
+  p <- ggplot(dev, aes_(x = ~iteration, y = ~value, color = ~factor(ttot),
+                       group = ~interaction(ttot))) +
+    geom_hline(yintercept = c(-tol, tol), linetype = "dashed", color = "grey50") +
+    geom_hline(yintercept = 0, color = "grey80") +
+    geom_line(alpha = 0.7) +
+    geom_point(size = 0.8, alpha = 0.7) +
+    facet_wrap(~label, scales = "free_y") +
+    scale_y_continuous(labels = scales::percent) +
+    theme_bw() +
+    labs(x = "iteration", y = "price deviation from target", color = "period")
+
+  ggplotly(p)
+}
+
+```
+
+## Applied tax / subsidy per target
+
+The implicit tax (positive) or subsidy (negative) applied to reach the target, over
+iterations. A converged target has a settled (flat) tax.
+
+```{r tax, results = "asis"}
+
+if (nrow(tax) == 0) {
+  emptyMsg("p47_implicitPePriceTax_iter is empty in this gdx.")
+} else {
+  p <- ggplot(tax, aes_(x = ~iteration, y = ~value, color = ~factor(ttot),
+                       group = ~interaction(ttot))) +
+    geom_hline(yintercept = 0, color = "grey80") +
+    geom_line(alpha = 0.7) +
+    geom_point(size = 0.8, alpha = 0.7) +
+    facet_wrap(~label, scales = "free_y") +
+    theme_bw() +
+    labs(x = "iteration", y = "implicit tax/subsidy on PE [T$2005/TWyr]", color = "period")
+
+  ggplotly(p)
+}
+
+```
+
+## Final-iteration status
+
+Targets flagged in the last iteration: `pm_implicitPePrice_NotConv` holds the residual
+deviation of targets that did **not** converge; `pm_implicitPePrice_ignConv` marks
+targets **ignored** by the check (1 = non-existent price, 2 = price frozen 3 iterations).
+
+```{r summary, results = "asis"}
+
+notConv <- getPlotDataSafe("pm_implicitPePrice_NotConv", params$gdx)
+ignConv <- getPlotDataSafe("pm_implicitPePrice_ignConv", params$gdx)
+
+if (nrow(notConv) == 0) {
+  cat("**All active PE price targets converged** (pm_implicitPePrice_NotConv is empty).\n\n")
+} else {
+  notConv <- notConv %>%
+    rename("deviation" = "pm_implicitPePrice_NotConv") %>%
+    filter(abs(.data$deviation) > 0) %>%
+    mutate("deviation_pct" = round(100 * .data$deviation, 2))
+  if (nrow(notConv) == 0) {
+    cat("**All active PE price targets converged.**\n\n")
+  } else {
+    cat("**Not converged targets (residual deviation):**\n\n")
+    print(knitr::kable(notConv, row.names = FALSE))
+    cat("\n\n")
+  }
+}
+
+if (nrow(ignConv) > 0) {
+  ignConv <- ignConv %>%
+    rename("ignore_reason" = "pm_implicitPePrice_ignConv") %>%
+    filter(.data$ignore_reason > 0)
+  if (nrow(ignConv) > 0) {
+    cat("**Ignored targets (1 = no price, 2 = price frozen):**\n\n")
+    print(knitr::kable(ignConv, row.names = FALSE))
+  }
+}
+
+```

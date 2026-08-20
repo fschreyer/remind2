@@ -316,6 +316,14 @@ reportTechnology <- function(gdx, output = NULL, regionSubsetList = NULL,
 
   int2ext <- c(int2ext, get_global_mapping(category, unit, tech_exclude))
 
+  ## nuclear efficiency (conversion factor) ----
+  ## conversion efficiency in p_eta_conv is in TWa_elec/Mt_Ur
+  s_twa2mwh <- readGDX(gdx, "sm_TWa_2_MWh", format = "first_found", react = "silent")
+  tmp <- mbind(tmp, setNames(p_eta_conv[, , "tnrs"] * s_twa2mwh * 3.6 / 1e9,
+                             report_str(techmap[["tnrs"]], "Efficiency|Conversion factor", "GJ_el/kg_Ur")))
+  int2ext[[report_str(techmap[["tnrs"]], "Efficiency|Conversion factor", "GJ_el/kg_Ur")]] <-
+    report_str(techmap[["tnrs"]], unit = "EJ/yr", predicate = "SE")
+
   ## lifetime ----
 
   category <- "Lifetime"
@@ -363,6 +371,26 @@ reportTechnology <- function(gdx, output = NULL, regionSubsetList = NULL,
   tmp <- bind_category(tmp, omv, category, unit, 1000. / 31.7098)
   int2ext <- c(int2ext, get_global_mapping(category, unit, techmap))
 
+  ## CO2 emission factors per electricity generation technology ----
+  sm_c_2_co2 <- as.numeric(readGDX(gdx, "sm_c_2_co2"))
+  pm_emifac_co2 <- readGDX(gdx, "pm_emifac", restore_zeros = FALSE)[, y, "co2"]
+  factor_emifac <- sm_c_2_co2 * 1e12 / s_twa2mwh  # GtC/TWa -> gCO2/kWh
+
+  seel_dims  <- grep("\\.seel\\.", getNames(pm_emifac_co2), value = TRUE)
+  seel_map   <- setNames(seel_dims, sapply(strsplit(seel_dims, "\\."), `[[`, 3))
+  seel_map   <- seel_map[names(seel_map) %in% names(techmap)]
+
+  for (key in names(seel_map)) {
+    emifac_thermal <- pm_emifac_co2[, , seel_map[[key]]] * factor_emifac
+    tmp <- mbind(tmp,
+      setNames(emifac_thermal,
+               report_str(techmap[[key]], "CO2 emission factor thermal input", "gCO2/kWh_th")),
+      setNames(emifac_thermal / (if (key %in% in_dataeta) p_dataeta[, , key] else p_eta_conv[, , key]),
+               report_str(techmap[[key]], "CO2 emission factor electricity output", "gCO2/kWh_el"))
+    )
+    int2ext[[report_str(techmap[[key]], "CO2 emission factor thermal input", "gCO2/kWh_th")]] <- report_str(techmap[[key]], unit = "EJ/yr", predicate = "SE")
+    int2ext[[report_str(techmap[[key]], "CO2 emission factor electricity output", "gCO2/kWh_el")]] <- report_str(techmap[[key]], unit = "EJ/yr", predicate = "SE")
+  }
 
   # write to output ----
   ## substitute NA by 1E-30 to avoid that if in 2005, 2010, 2015, 2130, 2150,

@@ -9,7 +9,7 @@ params:
   gdx: "fulldata.gdx"
   warning: false
   message: false
-  figWidth: 8
+  figWidth: 12
 ---
 
 <style>
@@ -29,7 +29,6 @@ params:
 
 
 ```{r loading_libraries, include=FALSE}
-
 library(remind2)
 
 knitr::opts_chunk$set(
@@ -39,24 +38,85 @@ knitr::opts_chunk$set(
   message = params$message,
   warning = params$warning
 )
-
 ```
 
 
 ## Convergence Criterias
 
-```{r results = "asis", fig.height=10}
+Master overview of every convergence criterion. Each **row** is one criterion and the
+**x-axis** is the Nash iteration; each **dot** shows whether that criterion was met at
+that iteration (teal = met, red = not; the top feasibility row also uses amber for
+skipped / feasible-but-not-optimal, and the emission-market row uses amber for a
+best-achievable stop). The run converges only once **every active criterion is teal in
+the same iteration**. A **black** y-axis label marks an active criterion; a **grey**
+label an inactive one. Hover any dot for the underlying value and the regions/periods
+still failing.
 
+```{r results = "asis", fig.height=10}
 diag <- plotNashConvergence(gdx = params$gdx)
 htmltools::tagList(diag$plot)
-
 ```
 
+<!--
 ## Trade summary
 
+Detail behind the trade-surplus row above: the worst market surplus of each traded good,
+per period (facet columns / rows) across iterations (x-axis). The **coloured line** is
+the actual surplus and the **shaded rectangle** is the allowed tolerance band — green
+while the good is inside it that iteration, red when outside. A good whose line stays
+outside its band is the one holding up trade convergence.
+
 ```{r results = "asis", fig.height=10}
-
 htmltools::tagList(diag$tradeDetailPlot)
-
 ```
+-->
+
+## Non-convergence reasons per iteration
+
+```{r results = "asis"}
+# Per-iteration diagnostics come from the GAMS listing file full.lst, assumed to
+# sit next to the gdx. parseLSTReasons() reads it only at render time, using
+# grep/sed when available and falling back to pure R otherwise.
+lstFile <- file.path(dirname(params$gdx), "full.lst")
+reasons <- parseLSTReasons(lstFile, timeLimit = 90)
+
+if (is.null(reasons)) {
+  if (file.exists(lstFile)) {
+    cat("*Parsing `full.lst` exceeded the 90s time limit or failed; per-iteration diagnostics unavailable.*")
+  } else {
+    cat(paste0(
+      "*No `full.lst` found next to the gdx (expected at `", lstFile,
+      "`) - per-iteration diagnostics unavailable.*"
+    ))
+  }
+} else if (nrow(reasons) == 0) {
+  cat("*No per-iteration non-convergence sections found in `full.lst`.*")
+} else {
+  iters <- reasons$iteration
+  texts <- reasons$text
+  {
+    n <- length(iters)
+    divs <- paste0(
+      "<div class='iterReasons' style='display:", ifelse(seq_len(n) == 1, "block", "none"),
+      "'><pre style='white-space:pre-wrap'>", htmltools::htmlEscape(texts), "</pre></div>",
+      collapse = "\n"
+    )
+    cat(paste0(
+      "<input type='range' min='1' max='", n, "' value='1' id='iterReasonsSlider' style='width:100%'>\n",
+      "<div id='iterReasonsLabel' style='font-weight:bold;margin:6px 0'></div>\n",
+      "<div id='iterReasonsBox'>\n", divs, "\n</div>\n",
+      "<script>\n(function(){\n",
+      "var nums=[", paste(iters, collapse = ","), "];\n",
+      "var slider=document.getElementById('iterReasonsSlider');\n",
+      "var divs=document.getElementById('iterReasonsBox').getElementsByClassName('iterReasons');\n",
+      "var label=document.getElementById('iterReasonsLabel');\n",
+      "function show(i){for(var k=0;k<divs.length;k++){divs[k].style.display=(k==i-1)?'block':'none';}\n",
+      "label.innerText='Iteration '+nums[i-1];}\n",
+      "slider.addEventListener('input',function(e){show(+e.target.value);});\n",
+      "show(1);\n})();\n</script>"
+    ))
+  }
+}
+```
+
 

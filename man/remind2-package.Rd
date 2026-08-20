@@ -41,6 +41,7 @@ Authors:
   \item Anne Merfort
   \item Leon Merfort
   \item Simón Morena-Leiva
+  \item Adrian Odenweller
   \item Michaja Pehl
   \item Robert Pietzcker
   \item Sebastian Rauner

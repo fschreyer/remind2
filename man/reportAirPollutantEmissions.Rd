@@ -32,10 +32,9 @@ t=c(seq(2005,2060,5),seq(2070,2110,10),2130,2150)}
 \item{addTmpTotal}{choose if temporary totals are computed (default = FALSE)}
 }
 \description{
-Warning: MAgPIE AP emissions are currently not available in REMIND.
-         Once available, they need to be reported here, added to the
-         temporary total below (see addTmpTotal) and  to the totals
-         in reportExtraEmissions.
+Read in GDX, GAINS2025 emission factors and baseyear emissions and
+calculate air pollution emissions, used in convGDX2MIF.R for
+the reporting
 }
 \examples{
 \dontrun{

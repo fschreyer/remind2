@@ -19,7 +19,7 @@ indicators_buildings <- c(
   "UE|Buildings|non-Heating|Electricity|Conventional pCap",
   "UE|Buildings|non-Heating|Electricity|Appliances and Lighting pCap")
 indicators_transport <- c(
-  "ES|Transport|Pass with bunkers pCap",
+  "ES|Transport|Pass pCap",
   "ES|Transport|Pass|Short-Medium distance pCap",
   "ES|Transport|Pass|Road|LDV|Four Wheelers pCap",
   "ES|Transport|Pass|Road|LDV|Three Wheelers pCap",
@@ -275,7 +275,7 @@ if ("UE|Buildings|Heating|Electricity|Heat pump pCap" %in% data[["variable"]]) {
 
 #### FE Pass mix by mode w/ bunkers
 ```{r FE Pass mix by mode w/ bunkers}
-tot <- "FE|Transport|Pass with bunkers"
+tot <- "FE|Transport|Pass"
 items <- c(
   "FE|Transport|Bunkers|Pass|International Aviation",
   "FE|Transport|Pass|Domestic Aviation",
@@ -290,7 +290,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 
 #### FE Pass mix by mode w/ bunkers - per capita
 ```{r FE Pass mix by mode w/ bunkers - per capita}
-tot <- "FE|Transport|Pass with bunkers pCap"
+tot <- "FE|Transport|Pass pCap"
 items <- c(
   "FE|Transport|Bunkers|Pass|International Aviation pCap",
   "FE|Transport|Pass|Domestic Aviation pCap",
@@ -307,7 +307,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 
 #### ES Pass mix by mode w/ bunkers
 ```{r ES Pass by mode w/ bunkers - Bar}
-tot <- "ES|Transport|Pass with bunkers"
+tot <- "ES|Transport|Pass"
 items <- c(
   "ES|Transport|Bunkers|Pass|International Aviation",
   "ES|Transport|Pass|Domestic Aviation",
@@ -324,7 +324,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 
 #### ES Pass mix by mode w/ bunkers - per capita
 ```{r ES Pass by mode w/ bunkers - Bar}
-tot <- "ES|Transport|Pass with bunkers pCap"
+tot <- "ES|Transport|Pass pCap"
 items <- c(
   "ES|Transport|Bunkers|Pass|International Aviation pCap",
   "ES|Transport|Pass|Domestic Aviation pCap",
@@ -367,7 +367,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 
 #### ES Pass Modes - Line
 ```{r ES Pass Modes - Line}
-showLinePlots(data, "ES|Transport|Pass with bunkers")
+showLinePlots(data, "ES|Transport|Pass")
 showLinePlots(data, "ES|Transport|Pass|Short-Medium distance")
 showLinePlots(data, "ES|Transport|Pass|Road|LDV")
 showLinePlots(data, "ES|Transport|Pass|Road|LDV|Four Wheelers")

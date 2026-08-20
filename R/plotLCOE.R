@@ -13,8 +13,8 @@
 #' @export
 #' @importFrom magclass read.report mbind
 #' @importFrom lusweave swopen swlatex swfigure swclose
-#' @importFrom ggplot2 ggplot facet_wrap geom_errorbar ggtitle scale_y_continuous
-#' geom_col aes element_text theme_bw sec_axis scale_x_discrete scale_linetype_identity unit
+#' @importFrom ggplot2 ggplot facet_wrap geom_errorbar ggtitle scale_y_continuous geom_col aes element_text theme_bw
+#' @importFrom ggplot2 sec_axis scale_x_discrete scale_linetype_identity unit
 #' @importFrom dplyr left_join
 #' @importFrom quitte order.levels getRegs revalue.levels getScenarios
 #' @importFrom tidyr spread gather

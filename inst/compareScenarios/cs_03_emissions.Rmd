@@ -73,12 +73,14 @@ showLinePlots(data, "Emi|GHG|Industrial Processes")
 
 ### GHG Agriculture
 ```{r GHG Agriculture}
-showLinePlots(data, "Emi|GHG|Agriculture")
+showLinePlots(data, "Emi|GHG|Agriculture",
+              histModelsExclude = "ClimateTrace")
 ```
 
 ### GHG Waste
 ```{r GHG Waste}
-showLinePlots(data, "Emi|GHG|Waste")
+showLinePlots(data, "Emi|GHG|Waste",
+              histModelsExclude = "ClimateTrace")
 ```
 
 
@@ -141,7 +143,8 @@ showAreaAndBarPlots(data, items, tot, scales = "fixed")
 ```{r Energy and Industrial Processes w/o bunkers - Net (incl BECCS)}
 showLinePlots(
   data, 
-  vars = "Emi|CO2|w/o Bunkers|Energy and Industrial Processes"
+  vars = "Emi|CO2|w/o Bunkers|Energy and Industrial Processes",
+  histModelsExclude = "ClimateTrace"
 )
 ```
 
@@ -149,7 +152,8 @@ showLinePlots(
 ```{r Energy and Industrial Processes w/ bunkers - Net (incl BECCS)}
 showLinePlots(
   data, 
-  vars = "Emi|CO2|w/ Bunkers|Energy and Industrial Processes"
+  vars = "Emi|CO2|w/ Bunkers|Energy and Industrial Processes",
+  histModelsExclude = "ClimateTrace"
 )
 ```
 
@@ -179,7 +183,8 @@ showLinePlots(data, "Emi|CO2|w/ Bunkers|Energy")
 showLinePlots(
   data, 
   vars = "Emi|CO2|Energy|Supply", 
-  histVars = c("Emi|CO2|Energy|Supply", "Emi|CO2|Fossil Fuels and Industry|Energy Supply")
+  histVars = c("Emi|CO2|Energy|Supply", "Emi|CO2|Fossil Fuels and Industry|Energy Supply"),
+  histModelsExclude = "ClimateTrace"
 )
 ```
 
@@ -189,14 +194,17 @@ showLinePlots(
 showLinePlots(
   data, 
   vars = "Emi|CO2|Energy|Supply|Electricity w/ couple prod", 
-  histVars = c("Emi|CO2|Energy|Supply|Electricity w/ couple prod", "Emi|CO2|Energy|Supply|Electricity")
+  histVars = c("Emi|CO2|Energy|Supply|Electricity w/ couple prod", "Emi|CO2|Energy|Supply|Electricity"),
+  histModelsExclude = "ClimateTrace"
 )
 ```
 
 
 ### Electricity and Heat
 ```{r CO2 Electricity and Heat}
-showLinePlots(data, vars = "Emi|CO2|Energy|Supply|Electricity and Heat")
+showLinePlots(data, 
+              vars = "Emi|CO2|Energy|Supply|Electricity and Heat",
+              histModelsExclude = "ClimateTrace")
 ```
 
 
@@ -205,7 +213,8 @@ showLinePlots(data, vars = "Emi|CO2|Energy|Supply|Electricity and Heat")
 showLinePlots(
   data, 
   vars = "Emi|CO2|Energy|Demand|Buildings", 
-  histVars = c("Emi|CO2|Energy|Demand|Buildings", "Emi|CO2|Buildings|Direct")
+  histVars = c("Emi|CO2|Energy|Demand|Buildings", "Emi|CO2|Buildings|Direct"),
+  histModelsExclude = "ClimateTrace"
 )
 ```
 
@@ -230,7 +239,9 @@ showLinePlots(
 
 ### Industry with Industrial Processes
 ```{r CO2 Industry with Industrial Processes}
-showLinePlots(data, "Emi|CO2|Industry")
+showLinePlots(data, 
+              vars = "Emi|CO2|Industry",
+              histModelsExclude = "ClimateTrace")
 ```
 
 ### Industry Subsector Emissions
@@ -247,17 +258,20 @@ walk(items, showLinePlots, data = data)
 
 ### Transport without bunkers
 ```{r CO2 Transport}
-showLinePlots(data, "Emi|CO2|w/o Bunkers|Energy|Demand|Transport")
+showLinePlots(data, "Emi|CO2|w/o Bunkers|Energy|Demand|Transport",
+              histModelsExclude = "ClimateTrace")
 ```
 
 ### Transport with bunkers
 ```{r CO2 Transport}
-showLinePlots(data, "Emi|CO2|w/ Bunkers|Energy|Demand|Transport")
+showLinePlots(data, "Emi|CO2|w/ Bunkers|Energy|Demand|Transport",
+              histModelsExclude = "ClimateTrace")
 ```
 
 ### International Bunkers
 ```{r CO2 Bunkers}
-showLinePlots(data, "Emi|CO2|Energy|Demand|Transport|International Bunkers")
+showLinePlots(data, "Emi|CO2|Energy|Demand|Transport|International Bunkers",
+              histModelsExclude = "ClimateTrace")
 ```
 
 
@@ -442,22 +456,34 @@ walk(cdrVars, showLinePlots, data = data)
 
 ## Cumulated Emissions
 ```{r}
-# calculate cumulated CO2 and GHG emissions relative to 2020
+# calculate cumulated CO2 and GHG emissions since 2020 (incl. the 2020 emissions)
 dCumul <- data %>%
   filter(grepl("^Emi.*Cumulated", variable))
 dCumul <- dCumul %>%
+  rename(cum.value = value) %>%
+  mutate(variable.noncumul = sub("\\|Cumulated", "", variable)) %>%
+  # cum.value2020: cumulated value in 2020
   left_join(
-    dCumul %>% filter(period == 2020),
-    by = c("model", "scenario", "region", "variable", "unit"),
-    suffix = c("", "2020")) %>%
-  mutate(value = (value - value2020) / 1000,
-         unit = "Gt CO2")
+    dCumul %>%
+      filter(period == 2020) %>%
+      select(model, scenario, region, variable, unit, cum.value2020 = value),
+    by = c("model", "scenario", "region", "variable", "unit")) %>%
+  # value2020: 2020 emissions of the corresponding non-cumulated variable
+  left_join(
+    data %>%
+      filter(period == 2020) %>%
+      mutate(variable.noncumul = as.character(variable)) %>%
+      select(model, scenario, region, variable.noncumul, value2020 = value),
+    by = c("model", "scenario", "region", "variable.noncumul")) %>%
+  mutate(value = (cum.value - cum.value2020 + value2020) / 1000,
+         unit = "Gt CO2") %>%
+  select(model, scenario, region, variable, unit, period, value)
 
 # define lines for usual CO2 budgets of standard REMIND runs
 pkBudg <- tribble(
       ~region, ~period, ~value, ~variable,                      
-      "World", 2020,    500,    "|target|500 Gt from",
       "World", 2020,    650,    "|target|650 Gt from",
+      "World", 2020,    750,    "|target|750 Gt from",
       "World", 2020,    1000,   "|target|1000 Gt from",
   )
 ```

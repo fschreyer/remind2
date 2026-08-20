@@ -210,7 +210,12 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
 
   # maximum annual CO2 storage potential assumed
   # collapseDim removes 'cco2', 'ico2', and 'rlf' dimensions and keeps only 'ccsinjeon/ccsinjeoff'
-  max_geolStorage <- collapseDim(readGDX(gdx, "vm_co2CCS", field = "up", restore_zeros = FALSE), keepdim = "all_te")
+  # in some cases there are more technologies and more grades. Thus, explicitly pick ccsinje* techs and their only grade '1'
+  max_geolStorage <- readGDX(gdx, "vm_co2CCS", field = "up", restore_zeros = FALSE)
+  if ("ccsinjeon" %in% getItems(max_geolStorage, dim = "all_te")) {
+    max_geolStorage <- max_geolStorage[,,c("ccsinjeon","ccsinjeoff"), pmatch = TRUE][,,"1"]
+  }
+  max_geolStorage <- collapseDim(max_geolStorage, keepdim = "all_te")
 
   ## Read CO2 captured per industry subsector ----
   # NOTE: The parameter pm_IndstCO2Captured was calculated without taking into
@@ -2373,12 +2378,11 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     emi_Biochar <- dimSums(mselect(EmiPe2Se, all_enty1 = "sebiochar"), dim = 3)
   }
 
-
   out <- mbind(
     out,
     # total negative land-use change emissions
     setNames(
-      EmiCDR.LUC,
+      out[, , "Emi|CO2|Land-Use Change|Negative|+|Intentional (Mt CO2/yr)"],
       "Emi|CO2|CDR|+|Land-Use Change (Mt CO2/yr)"
     ),
     # total BECCS (pe2se + bio FE w CCS in industry and CDR demand sector + waste incineration BECCS)
@@ -3777,7 +3781,8 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     vars %>%
       deletePlus() %>% # remove all + from extended variables: summation checks only make sense if all sub-variables are covered
       sub("^Emi\\|CO2", paste0("Emi|CO2|", addedString), .) %>%
-      sub("^Emi\\|GHG", paste0("Emi|GHG|", addedString), .)
+      sub("^Emi\\|GHG", paste0("Emi|GHG|", addedString), .) %>%
+      sub("^Carbon Management\\|Storage", paste0("Carbon Management|Storage|", addedString), .)
   }
 
   # emissions variables with bunkers. Insert 'w/ Bunkers' into variable name
@@ -3834,7 +3839,8 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     "Emi|CO2|CDR|+|EW (Mt CO2/yr)",
     "Emi|CO2|CDR|+|OAE (Mt CO2/yr)",
     "Emi|CO2|CDR|+|Land-Use Change (Mt CO2/yr)",
-    "Emi|CO2|CDR|+|Materials (Mt CO2/yr)"
+    "Emi|CO2|CDR|+|Materials (Mt CO2/yr)",
+    "Carbon Management|Storage (Mt CO2/yr)"
   ) %>%
     intersect(getNames(out)) # keep only variables that are in out
 

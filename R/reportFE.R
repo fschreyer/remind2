@@ -19,10 +19,8 @@
 #'
 #' @export
 #' @importFrom gdx readGDX
-#' @importFrom magclass new.magpie mselect getRegions getYears mbind setNames
-#'                      getNames<- as.data.frame as.magpie getSets
-#' @importFrom dplyr %>% filter full_join group_by left_join mutate rename
-#'     select semi_join summarize ungroup
+#' @importFrom magclass new.magpie mselect getRegions getYears mbind setNames getNames<- as.data.frame as.magpie getSets
+#' @importFrom dplyr %>% filter full_join group_by left_join mutate rename select semi_join summarize ungroup
 #' @importFrom quitte inline.data.frame revalue.levels
 #' @importFrom rlang syms
 #' @importFrom tibble as_tibble tibble tribble
@@ -85,6 +83,11 @@ reportFE <- function(gdx, regionSubsetList = NULL,
                             restore_zeros = FALSE, format = "first_found"
   )[, t, ] * TWa_2_EJ
   vm_demFeSector[is.na(vm_demFeSector)] <- 0
+
+  ## Ensure backwards compatibility for release version 3.6.0 (can be removed with 3.7.0)
+  getNames(vm_demFeSector, dim = 3) <- tolower(getNames(vm_demFeSector, dim = 3))
+  ## End backwards compatibility
+
 
   # FE non-energy use
   vm_demFENonEnergySector <- readGDX(gdx, "vm_demFENonEnergySector",
@@ -189,7 +192,6 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   getSets(out, fulldim = FALSE)[3] <- "data"
 
   # ---- FE sector demand ------
-
 
   # FE per sector and per emission market (ETS and ESR)
   out <- mbind(
@@ -366,39 +368,39 @@ reportFE <- function(gdx, regionSubsetList = NULL,
     setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feh2s", emi_sectors = "build", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|Buildings|ETS|+|Hydrogen (EJ/yr)"),
 
     # CDR
-    setNames((dimSums(mselect(vm_demFeSector, emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|++|CDR (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|+++|ETS (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|++|CDR (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|+++|ETS (EJ/yr)"),
 
     # CDR liquids
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Liquids (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqbio", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|Liquids|+|Biomass (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqfos", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|Liquids|+|Fossil (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqsyn", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|Liquids|+|Hydrogen (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Liquids (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqbio", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Liquids|+|Biomass (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqfos", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Liquids|+|Fossil (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqsyn", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Liquids|+|Hydrogen (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Liquids (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqbio", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|Liquids|+|Biomass (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqfos", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|Liquids|+|Fossil (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqsyn", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|Liquids|+|Hydrogen (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Liquids (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqbio", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Liquids|+|Biomass (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqfos", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Liquids|+|Fossil (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fedie", all_enty = "seliqsyn", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Liquids|+|Hydrogen (EJ/yr)"),
     # CDR gases
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Gases (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segabio", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|Gases|+|Biomass (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segafos", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|Gases|+|Fossil (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segasyn", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|Gases|+|Hydrogen (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Gases (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segabio", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Gases|+|Biomass (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segafos", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Gases|+|Fossil (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segasyn", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Gases|+|Hydrogen (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Gases (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segabio", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|Gases|+|Biomass (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segafos", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|Gases|+|Fossil (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segasyn", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|Gases|+|Hydrogen (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Gases (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segabio", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Gases|+|Biomass (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segafos", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Gases|+|Fossil (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fegas", all_enty = "segasyn", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|Gases|+|Hydrogen (EJ/yr)"),
 
     # CDR electricity
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feels", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Electricity (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feels", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Electricity (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feels", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Electricity (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feels", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Electricity (EJ/yr)"),
 
     # CDR hydrogen
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feh2s", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Hydrogen (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feh2s", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Hydrogen (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feh2s", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Hydrogen (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "feh2s", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Hydrogen (EJ/yr)"),
 
     # CDR heat
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fehes", emi_sectors = "CDR"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Heat (EJ/yr)"),
-    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fehes", emi_sectors = "CDR", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Heat (EJ/yr)")
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fehes", emi_sectors = "cdr"), dim = 3, na.rm = TRUE)), "FE|CDR|+|Heat (EJ/yr)"),
+    setNames((dimSums(mselect(vm_demFeSector, all_enty1 = "fehes", emi_sectors = "cdr", all_emiMkt = "ETS"), dim = 3, na.rm = TRUE)), "FE|CDR|ETS|+|Heat (EJ/yr)")
   )
 
   # TODO: can be removed as "complex" is not used anymore?
@@ -608,9 +610,9 @@ reportFE <- function(gdx, regionSubsetList = NULL,
     # estimated here assuming the FE-UE efficiency of the basline (from EDGE-B)
     p36_uedemand_build <- readGDX(gdx, "p36_uedemand_build", react = "silent")[, t, ]
     if (!is.null(p36_uedemand_build)) {
-      pm_fedemand <- readGDX(gdx, "pm_fedemand")[, t, ]
+      pm_fedemandBuild <- readGDX(gdx, name = c("pm_fedemandBuild", "pm_fedemand"))[, t, ]
       feUeEff_build <- p36_uedemand_build[, , names(carrierBuild)] /
-        pm_fedemand[, , names(carrierBuild)]
+        pm_fedemandBuild[, , names(carrierBuild)]
       feUeEff_build[is.na(feUeEff_build) | is.infinite(feUeEff_build)] <- 1
       # assume efficiency for all gases also for H2
       feUeEff_build[, , "feh2b"] <- setNames(feUeEff_build[, , "fegab"], "feh2b")

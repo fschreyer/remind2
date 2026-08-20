@@ -13,6 +13,10 @@ library(gdx)
 test_that("Test if REMIND reporting is produced as it should and check data integrity", {
   skip_if_not(as.logical(gdxrrw::igdx(silent = TRUE)), "gdxrrw is not initialized properly")
 
+  # Raise the download timeout (default is 60s), as the reference GDXs are large (>100 MB)
+  # and would otherwise time out on slower connections, aborting the build.
+  withr::local_options(timeout = max(600, getOption("timeout")))
+
   # GDXs for comparison.
   gdxList <- c("fulldata-SSP2-EU21-PkBudg650-release.gdx" = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_SSP2-EU21-PkBudg650-release.gdx",
                "fulldata-SSP2-NPi-AMT.gdx"                = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_SSP2-NPi-AMT.gdx")

@@ -21,8 +21,7 @@
 #' @export
 #' @importFrom assertr assert not_na
 #' @importFrom gdx readGDX
-#' @importFrom magclass getYears getRegions mbind setNames mselect
-#' new.magpie setYears mcalc
+#' @importFrom magclass getYears getRegions mbind setNames mselect new.magpie setYears mcalc
 #' @importFrom tibble as_tibble
 #' @importFrom data.table :=
 #' @importFrom tidyselect everything

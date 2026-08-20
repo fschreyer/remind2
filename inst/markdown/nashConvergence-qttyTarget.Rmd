@@ -364,7 +364,23 @@ g[["qtty_and_tax"]] <-
 ```{r deviation chart, echo=FALSE, include=FALSE}
 
 # deviation chart
+# join the "tax at limit" flag (pm_implicitQttyTarget_isLimited): when a target's tax
+# hits its limit the algorithm cannot push further, so a "not converged" verdict there
+# is not actionable. Empty in runs where no target was limited.
+isLimitedData <- if (nrow(pm_implicitQttyTarget_isLimited) > 0) {
+  pm_implicitQttyTarget_isLimited %>%
+    rename(isLimited = "pm_implicitQttyTarget_isLimited") %>%
+    select("iteration", "ttot", "ext_regi", "qttyTarget", "qttyTargetGroup", "isLimited")
+} else {
+  p47_implicitQttyTarget_dev_iter %>%
+    select("iteration", "ttot", "ext_regi", "qttyTarget", "qttyTargetGroup") %>%
+    mutate(isLimited = 0) %>%
+    dplyr::slice(0)
+}
+
 plotData <- p47_implicitQttyTarget_dev_iter %>%
+  left_join(isLimitedData, by = c("iteration", "ttot", "ext_regi", "qttyTarget", "qttyTargetGroup")) %>%
+  mutate(isLimited = ifelse(is.na(.data$isLimited), 0, .data$isLimited)) %>%
   mutate(
     converged = ifelse((
       .data$p47_implicitQttyTarget_dev_iter <=  cm_implicitQttyTarget_tolerance
@@ -400,7 +416,8 @@ plotData <- p47_implicitQttyTarget_dev_iter %>%
         round(100 * cm_implicitQttyTarget_tolerance, 2),
         "%"
       )
-      )
+      ),
+      ifelse(.data$isLimited == 1, "<br>Tax at limit (cannot be pushed further)", "")
     )
   )
 
@@ -428,6 +445,11 @@ g[["deviation"]] <-
           alpha = 0.2
         )) +
         suppressWarnings(geom_line(aes_string(group = 1, text = "tooltip"))) +
+        suppressWarnings(geom_point(
+          data = dplyr::filter(d, .data$isLimited == 1),
+          aes(x = iteration, y = p47_implicitQttyTarget_dev_iter, text = tooltip),
+          shape = 17, color = "#7a00cc", size = 2, inherit.aes = FALSE
+        )) +
         scale_y_continuous(
           breaks = c(
             -5 * cm_implicitQttyTarget_tolerance,
@@ -464,6 +486,17 @@ g[["deviation"]] <-
 ```
 
 
+
+Each tab below is one region › target › period and shows two charts:
+
+- **Quantity and Tax** — the achieved quantity (teal, left axis) against the implicit
+  tax/subsidy applied to steer it (red, right axis), over iterations. When the target is
+  met the quantity sits at its goal and the tax stops moving between iterations.
+- **Deviation** — the quantity's deviation from target (%) over iterations, with the
+  ±tolerance band shaded green when inside (converged) and red when outside. A **purple
+  triangle** marks iterations where the tax hit its limit (`pm_implicitQttyTarget_isLimited`):
+  the algorithm could not push it further, so a "not converged" reading there is expected
+  and not actionable.
 
 ## {.tabset}
 

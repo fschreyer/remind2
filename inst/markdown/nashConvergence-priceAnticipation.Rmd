@@ -9,7 +9,7 @@ params:
   gdx: "fulldata.gdx"
   warning: false
   message: false
-  figWidth: 8
+  figWidth: 12
 ---
 
 <style>
@@ -59,12 +59,64 @@ adjustSliderAnimation <- function(p) {
 ```
 
 
+## Convergence summary
+
+The price-anticipation criterion converges when the maximum monetary trade-expenditure
+deviation until 2100 falls below **10% of the trade-good surplus tolerance**. The dashed
+line is that threshold; green points pass, red points fail.
+
+```{r summary, results = "asis"}
+
+threshold <- NA_real_
+mt <- mip::getPlotData("p80_surplusMaxTolerance", params$gdx)
+if (nrow(mt) > 0 && "good" %in% mt$all_enty) {
+  threshold <- 0.1 * mt$p80_surplusMaxTolerance[mt$all_enty == "good"]
+}
+
+df <- mip::getPlotData("p80_DevPriceAnticipGlobAllMax2100Iter", params$gdx)
+
+if (nrow(df) == 0) {
+  cat("p80_DevPriceAnticipGlobAllMax2100Iter is empty in this gdx.")
+} else {
+  df <- df %>%
+    rename("value" = "p80_DevPriceAnticipGlobAllMax2100Iter") %>%
+    mutate(
+      "iteration" := as.numeric(as.character(.data$iteration)),
+      "converged" = ifelse(!is.na(threshold) & .data$value > threshold, "no", "yes"),
+      "tooltip" = paste0("Iteration: ", .data$iteration,
+                         "<br>Max deviation: ", round(.data$value, 5), " T$",
+                         if (all(!is.na(threshold))) paste0("<br>threshold: ", round(threshold, 5)) else "")
+    )
+
+  p <- ggplot(df, aes_(x = ~iteration, y = ~value, group = 1, text = ~tooltip)) +
+    { if (!is.na(threshold)) geom_hline(yintercept = threshold, linetype = "dashed", color = "grey40") else NULL } +
+    geom_line(alpha = 0.6) +
+    suppressWarnings(geom_point(aes_(fill = ~converged), size = 2, shape = 21, color = "white")) +
+    scale_fill_manual(values = c("yes" = "#00BFC4", "no" = "#F8766D")) +
+    scale_y_log10() +
+    theme_bw() +
+    labs(x = "iteration", y = "max trade expenditure deviation until 2100 [T$]")
+
+  ggplotly(p, tooltip = c("text"))
+}
+
+```
+
+
 ## Monetary trade deviation
 
-### Max trade expenditure deviation  
+How much regions' monetary trade expenditure moves purely because each region
+*anticipates* its own impact on world prices. At a valid Nash equilibrium this term
+should fade to ~0, so across iterations these curves should shrink and flatten.
+
+### Max trade expenditure deviation
 
 - Max deviation of the yearly monetary export/import expenditure due to price change anticipation effect until 2100. [Unit: trillion Dollar]
 - p80_DevPriceAnticipGlobMax2100Iter
+
+*One line per traded good plus `all` (the aggregate); x = iteration, log y-axis. Watch
+the worst-case anticipation error up to 2100 fall towards zero — a line that plateaus
+high is the good whose anticipation is not settling.*
 
 ```{r results = "asis"}
 
@@ -99,6 +151,10 @@ p[[1]] + ggplot2::scale_y_log10(limits = c(1e-4, 1e+1))
 - Per iteration deviation of the yearly monetary export/import expenditure due to price change anticipation effect. [Unit: trillion Dollar]
 - p80_DevPriceAnticipGlobIter
 
+*x = model year, one facet per good, log y-axis, with an iteration slider. Advance the
+slider and watch the curve collapse toward the axis; periods that stay elevated are
+where the anticipation effect lingers.*
+
 ```{r results = "asis"}
 
 df <- mip::getPlotData("p80_DevPriceAnticipGlobIter", params$gdx) %>%
@@ -125,10 +181,16 @@ htmltools::tagList(plots)
 
 ## Price
 
-### Price change due to antecipation  
+The underlying price signal driving the deviations above.
+
+### Price change due to antecipation
 
 - Price change of a trade good due to the price anticipation effect. [Unit: Percent]
 - p80_PriceChangePriceAnticipReg
+
+*Percent price change attributable to anticipation; x = year, one facet per region, one
+line per good. Values approaching 0 across the horizon mean anticipation is no longer
+distorting prices.*
 
 ```{r results = "asis"}
 
@@ -153,10 +215,16 @@ plots[[1]]
 
 ## Regional monetary trade deviation
 
-### Regional trade expenditure deviation  
+The same expenditure deviation, resolved per region so you can see which regions
+contribute most.
+
+### Regional trade expenditure deviation
 
 - Regional and per iteration deviation of the yearly monetary export/import expenditure due to price change anticipation effec until 2100. [Unit: trillion Dollar]
 - p80_DevPriceAnticipReg
+
+*x = year, one facet per region, one line per good. Larger, more persistent curves mark
+the regions and goods most responsible for the remaining anticipation deviation.*
 
 ```{r results = "asis"}
 
@@ -180,10 +248,17 @@ plots[[1]]
 
 ## Global monetary trade deviation
 
-### Global sum of trade expenditure deviation  
+Globally aggregated anticipation deviation over the whole horizon (not just the max
+until 2100), for context on its shape over time.
+
+### Global sum of trade expenditure deviation
 
 - Global sum of deviation of the yearly monetary export/import expenditure due to price change anticipation effect. [Unit: trillion Dollar]
 - p80_DevPriceAnticipGlob
+
+*x = year, faceted by good (`all` = sum over goods, `allmax` = its running maximum).
+Read the height and persistence over time as the size of the remaining global
+anticipation distortion.*
 
 ```{r results = "asis"}
 
@@ -219,10 +294,14 @@ plots[[1]]
 
 ```
 
-### Max global sum of trade expenditure deviation  
+### Max global sum of trade expenditure deviation
 
 - Max global sum of deviation of the yearly monetary export/import expenditure due to price change anticipation effect. [Unit: trillion Dollar]
 - p80_DevPriceAnticipGlobMax
+
+*The running maximum of the global sum over the horizon (a monotone envelope), one
+facet per good. The lower this envelope sits, the closer the run is to eliminating the
+anticipation distortion.*
 
 ```{r results = "asis"}
 

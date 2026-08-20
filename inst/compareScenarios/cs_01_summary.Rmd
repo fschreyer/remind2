@@ -114,7 +114,7 @@ items <- c(
   "FE|Transport",
   "FE|Buildings",
   "FE|Industry")
-showAreaAndBarPlots(data, items, scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE", scales = "fixed")
 ```
 
 ### FE per capita - area plot, time domain
@@ -169,13 +169,14 @@ items <- c(
   "FE|Solids",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE", orderVars = "user", scales = "fixed")
 ```
 
 ### FE by carrier (detailed)
 
 ```{r FE by carrier (detailed)}
 items <- c(
+  "FE|CDR",
   "FE|Transport|Electricity",
   "FE|Buildings|Electricity",
   "FE|Industry|Electricity",
@@ -194,7 +195,7 @@ items <- c(
   "FE|Industry|Solids",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE", orderVars = "user", scales = "fixed")
 ```
 
 ### FE Industry by carrier (incl. non-energy use)
@@ -209,7 +210,7 @@ items <- c(
   "FE|Industry|Solids",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE|Industry", orderVars = "user", scales = "fixed")
 ```
 
 ### FE Buildings by carrier
@@ -224,10 +225,10 @@ items <- c(
   "FE|Buildings|Solids",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE|Buildings", orderVars = "user", scales = "fixed")
 ```
 
-### FE Transport by carrier
+### FE Transport by carrier (incl. bunkers)
 
 ```{r FE Transport by carrier}
 items <- c(
@@ -237,7 +238,7 @@ items <- c(
   "FE|Transport|Liquids",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE|Transport", orderVars = "user", scales = "fixed")
 ```
 
 ### FE CDR by carrier
@@ -251,7 +252,7 @@ items <- c(
   "FE|CDR|Liquids",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "FE|CDR", orderVars = "user", scales = "fixed")
 ```
 
 
@@ -262,15 +263,12 @@ items <- c(
   "FE|Non-energy Use|Industry|Gases",
   "FE|Non-energy Use|Industry|Liquids",
   "FE|Non-energy Use|Industry|Solids")
-showAreaAndBarPlots(data, items, orderVars = "user")
+showAreaAndBarPlots(data, items, tot = "FE|Non-energy Use", orderVars = "user")
 ```
 
 ## SE Electricity by carrier
 
 ```{r SE Electricity by carrier}
-
-tot <- "SE|Electricity"
-
 items <- c(
   "SE|Electricity|Net Imports",
   "SE|Electricity|Hydrogen",
@@ -290,7 +288,7 @@ items <- c(
   "SE|Electricity|Coal|w/o CC",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", tot, scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "SE|Electricity", orderVars = "user", scales = "fixed")
 ```
 
 
@@ -310,7 +308,7 @@ items <- c(
   "PE|Coal",
   NULL)
 
-showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
+showAreaAndBarPlots(data, items, tot = "PE", orderVars = "user", scales = "fixed")
 ```
 
 

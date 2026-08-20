@@ -281,6 +281,40 @@ Note: multiply EJ by 7.16 to obtain kt of Uranium
 
 
 ## PE Consumption (after trade)
+### PE Fossil
+```{r PE Fossil}
+tot <- "PE|Fossil"
+showLinePlots(data, tot)
+showRegiLinePlots(data, tot)
+
+items <- c(
+  "PE|Gas|Electricity",
+  "PE|Gas|Gases",
+  "PE|Gas|Liquids",
+  "PE|Gas|Heat",
+  "PE|Gas|Hydrogen",
+  "PE|Oil|Electricity",
+  "PE|Oil|Liquids",
+  "PE|Coal|Electricity",
+  "PE|Coal|Gases",
+  "PE|Coal|Liquids",
+  "PE|Coal|Hydrogen",
+  "PE|Coal|Heat",
+  "PE|Coal|Solids",
+  NULL)
+showAreaAndBarPlots(data, items, tot = tot, orderVars = "user", scales = "fixed")
+
+items <- c(
+  "PE|Gas|w/ CC",
+  "PE|Gas|w/o CC",
+  "PE|Oil|w/ CC",
+  "PE|Oil|w/o CC",
+  "PE|Coal|w/ CC",
+  "PE|Coal|w/o CC",
+  NULL)
+showAreaAndBarPlots(data, items, tot = tot, orderVars = "user", scales = "fixed")
+```
+
 ### PE Coal
 ```{r PE Coal}
 tot <- "PE|Coal"

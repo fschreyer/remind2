@@ -5,6 +5,17 @@ editor_options:
 ---
 # Energy Demand
 
+## Final Energy by sector
+
+```{r FE by sector}
+items <- c(
+  "FE|CDR",
+  "FE|Transport",
+  "FE|Buildings",
+  "FE|Industry")
+showAreaAndBarPlots(data, items, tot = "FE", scales = "fixed")
+```
+
 ## Final Energy all sectors
 
 ```{r Final Energy total}
@@ -51,17 +62,22 @@ showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
 ```{r Final Energy Detail}
 tot <- "FE"
 items <- c(
+  "FE|CDR|Electricity",
   "FE|Transport|Electricity",
   "FE|Buildings|Electricity",
   "FE|Industry|Electricity",
+  "FE|CDR|Hydrogen",
   "FE|Transport|Hydrogen",
   "FE|Buildings|Hydrogen",
   "FE|Industry|Hydrogen", 
+  "FE|CDR|Heat",
   "FE|Buildings|Heat",
   "FE|Industry|Heat", 
+  "FE|CDR|Gases",
   "FE|Transport|Gases",
   "FE|Buildings|Gases",
   "FE|Industry|Gases", 
+  "FE|CDR|Liquids",
   "FE|Transport|Liquids",
   "FE|Buildings|Liquids",
   "FE|Industry|Liquids", 
@@ -76,7 +92,7 @@ items <- c(
 showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
-### FE Demand Detail - Carrier and Sector - carrier share - Bar 
+### FE Demand Detail - Carrier and Sector share - Bar 
 ```{r FE all sectors - carrier share - Bar  }
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
@@ -85,14 +101,18 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 
 ```{r FE Demand Non-Electric - Carrier and Sector - Bar}
 items <- c(
+  "FE|CDR|Hydrogen",
   "FE|Transport|Hydrogen",
   "FE|Buildings|Hydrogen",
   "FE|Industry|Hydrogen", 
+  "FE|CDR|Heat",
   "FE|Buildings|Heat",
   "FE|Industry|Heat", 
+  "FE|CDR|Gases",
   "FE|Transport|Gases",
   "FE|Buildings|Gases",
-  "FE|Industry|Gases", 
+  "FE|Industry|Gases",
+  "FE|CDR|Liquids", 
   "FE|Transport|Liquids",
   "FE|Buildings|Liquids",
   "FE|Industry|Liquids", 
@@ -708,6 +728,7 @@ items_synliq <- c(
   "FE|Transport|Pass|Road|Bus|Liquids|Hydrogen",
   "FE|Transport|Freight|Rail|Liquids|Hydrogen",
   "FE|Transport|Pass|Rail|Liquids|Hydrogen",
+  "FE|Transport|Freight|Domestic Shipping|Liquids|Hydrogen",
   "FE|Transport|Pass|Domestic Aviation|Liquids|Hydrogen",
   "FE|Transport|Bunkers|Pass|International Aviation|Liquids|Hydrogen",
   "FE|Transport|Bunkers|Freight|International Shipping|Liquids|Hydrogen",
@@ -727,6 +748,7 @@ items_bioliq <- c(
   "FE|Transport|Pass|Road|Bus|Liquids|Biomass",
   "FE|Transport|Freight|Rail|Liquids|Biomass",
   "FE|Transport|Pass|Rail|Liquids|Biomass",
+  "FE|Transport|Freight|Domestic Shipping|Liquids|Biomass",
   "FE|Transport|Pass|Domestic Aviation|Liquids|Biomass",
   "FE|Transport|Bunkers|Pass|International Aviation|Liquids|Biomass",
   "FE|Transport|Bunkers|Freight|International Shipping|Liquids|Biomass",
@@ -853,3 +875,92 @@ showLinePlots(data, "FE|Transport|w/o Bunkers|Electricity|Share")
 ```
 
 
+## CDR Final Energy
+
+### CDR by carrier - Bar
+
+```{r FE CDR by carrier - Bar}
+tot <- "FE|CDR"
+items <- c(
+  "FE|CDR|Electricity",
+  "FE|CDR|Hydrogen",
+  "FE|CDR|Heat",
+  "FE|CDR|Gases",
+  "FE|CDR|Liquids",
+  NULL
+)
+
+showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
+```
+
+### CDR by technology - Bar
+
+```{r FE CDR by technology - Bar}
+tot <- "FE|CDR"
+items <- c(
+  "FE|CDR|DAC",
+  "FE|CDR|EW",
+  "FE|CDR|OAE, electric calciner",
+  "FE|CDR|OAE, traditional calciner",
+  NULL
+)
+
+showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
+```
+
+#### FE DAC
+
+```{r FE DAC - Bar}
+tot <- "FE|CDR|DAC"
+items <- c(
+  "FE|CDR|DAC|Electricity",
+  "FE|CDR|DAC|Heat",
+  "FE|CDR|DAC|Hydrogen",
+  "FE|CDR|DAC|Gases",
+  NULL
+)
+
+showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
+```
+
+#### FE EW
+
+```{r FE EW - Bar}
+tot <- "FE|CDR|EW"
+items <- c(
+  "FE|CDR|EW|Electricity",
+  "FE|CDR|EW|Diesel",
+  NULL
+)
+
+showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
+```
+
+#### FE OAE, electric calciner
+
+```{r FE OAE electric calciner - Bar}
+tot <- "FE|CDR|OAE, electric calciner"
+items <- c(
+  "FE|CDR|OAE, electric calciner|Electricity",
+  "FE|CDR|OAE, electric calciner|Diesel",
+  "FE|CDR|OAE, electric calciner|Hydrogen",
+  NULL
+)
+
+showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
+```
+
+
+#### FE OAE, traditional calciner
+```{r FE OAE traditional calciner - Bar}
+tot <- "FE|CDR|OAE, traditional calciner"
+items <- c(
+  "FE|CDR|OAE, traditional calciner|Electricity",
+  "FE|CDR|OAE, traditional calciner|Gases",
+  "FE|CDR|OAE, traditional calciner|Hydrogen",
+  "FE|CDR|OAE, traditional calciner|Diesel",
+  NULL
+)
+
+showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
+```

@@ -1,0 +1,205 @@
+---
+title: "Damage internalization convergence"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+params:
+  gdx: "fulldata.gdx"
+  warning: false
+  message: false
+  figWidth: 12
+---
+
+<style>
+  #header {
+    display: none !important
+  }
+  .main-container {
+    max-width: 95% !important;
+  }
+  .toc-content {
+    padding-left: 0px !important;
+  }
+  .svg-container {
+    margin: auto !important;
+  }
+</style>
+
+```{r loading_libraries, include=FALSE}
+
+library(dplyr)
+library(ggplot2)
+library(gdx)
+library(mip)
+library(plotly)
+library(remind2)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  error = TRUE,
+  fig.width = params$figWidth,
+  message = params$message,
+  warning = params$warning
+)
+
+```
+
+```{r setup, echo=FALSE, include=FALSE}
+
+emptyPlot <- function(var, df = NULL) {
+  cat(paste0("str() of raw data for '", var, "':\n"))
+  str(df)
+  p <- ggplot() +
+    annotate("text", x = 0, y = 0, label = paste0("no data for '", var, "' in this gdx")) +
+    theme_void()
+  ggplotly(p)
+}
+
+booleanColor <- c("yes" = "#00BFC4", "no" = "#F8766D")
+
+sccTol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_sccConvergence", react = "silent")))
+tempTol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_tempConvergence", react = "silent")))
+if (length(sccTol) == 0) sccTol <- NA_real_
+if (length(tempTol) == 0) tempTol <- NA_real_
+
+# helper: single iteration-indexed series with a threshold line
+plotConvSeries <- function(var, tol, ylab) {
+  df <- mip::getPlotData(var, params$gdx)
+  if (nrow(df) == 0) return(emptyPlot(var, df))
+
+  df <- df %>%
+    rename("value" = !!var) %>%
+    mutate(
+      "iteration" := as.numeric(as.character(.data$iteration)),
+      "converged" = if (is.na(tol)) "yes" else ifelse(.data$value > tol, "no", "yes"),
+      "tooltip" = paste0("Iteration: ", .data$iteration,
+                         "<br>", ylab, ": ", round(.data$value, 4),
+                         if (!is.na(tol)) paste0("<br>threshold: ", tol) else "")
+    )
+
+  p <- ggplot(df, aes_(x = ~iteration, y = ~value, group = 1)) +
+    { if (!is.na(tol)) geom_hline(yintercept = tol, linetype = "dashed", color = "grey40") else NULL } +
+    geom_line(alpha = 0.6) +
+    suppressWarnings(geom_point(aes_(fill = ~converged, text = ~tooltip), size = 2, shape = 21, color = "white")) +
+    scale_fill_manual(values = booleanColor) +
+    theme_bw() +
+    labs(x = "iteration", y = ylab)
+
+  ggplotly(p, tooltip = c("text"))
+}
+
+```
+
+Damage internalization converges only when **both** sub-criteria are met in the same
+iteration:
+
+- the **social cost of carbon (SCC)** is stable between iterations
+  (`p80_sccConvergenceMaxDeviation_iter <= cm_sccConvergence`
+  = `r ifelse(is.na(sccTol), "NA", sccTol)`), and
+- the **global mean temperature** is stable
+  (`p80_gmt_conv_iter <= cm_tempConvergence` = `r ifelse(is.na(tempTol), "NA", tempTol)`).
+
+The two charts below show each gate separately - the one still above its dashed
+threshold is the one holding up convergence.
+
+## Convergence summary
+
+Per iteration, whether damage internalization converged (i.e. **both** the SCC and the
+temperature gate are within tolerance). Green = converged, red = not.
+
+```{r summary, results = "asis"}
+
+scc <- mip::getPlotData("p80_sccConvergenceMaxDeviation_iter", params$gdx)
+gmt <- mip::getPlotData("p80_gmt_conv_iter", params$gdx)
+
+if (nrow(scc) == 0 || nrow(gmt) == 0) {
+  cat("No damage-internalization convergence data in this gdx (module internalizeDamages is off in this run).")
+} else {
+  scc <- scc %>% rename("scc" = "p80_sccConvergenceMaxDeviation_iter") %>%
+    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+  gmt <- gmt %>% rename("gmt" = "p80_gmt_conv_iter") %>%
+    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+
+  comb <- full_join(scc, gmt, by = "iteration") %>%
+    arrange(.data$iteration) %>%
+    mutate(
+      "converged" = ifelse((is.na(sccTol) | .data$scc <= sccTol) &
+                             (is.na(tempTol) | .data$gmt <= tempTol), "yes", "no"),
+      "tooltip" = paste0("Iteration: ", .data$iteration,
+                         "<br>SCC max dev: ", round(.data$scc, 4),
+                         "<br>GMT conv: ", round(.data$gmt, 4),
+                         "<br>", ifelse(.data$converged == "yes", "converged", "not converged"))
+    )
+
+  p <- suppressWarnings(ggplot(comb, aes_(x = ~iteration, y = "Damage\nInternalization",
+                                          fill = ~converged, text = ~tooltip)) +
+    geom_point(size = 3, shape = 21, color = "white") +
+    scale_fill_manual(values = booleanColor) +
+    theme_minimal() +
+    labs(x = "iteration", y = NULL))
+
+  ggplotly(p, tooltip = c("text"))
+}
+
+```
+
+## SCC convergence
+
+Maximum deviation of the social cost of carbon from the previous iteration [%]. Red
+points are above the threshold (not converged).
+
+```{r scc, results = "asis"}
+plotConvSeries("p80_sccConvergenceMaxDeviation_iter", sccTol, "SCC max deviation")
+```
+
+## Temperature convergence
+
+Global mean temperature convergence metric per iteration. Red points are above the
+threshold (not converged).
+
+```{r temp, results = "asis"}
+plotConvSeries("p80_gmt_conv_iter", tempTol, "GMT convergence")
+```
+
+## Combined verdict
+
+Per iteration, whether each gate passes and whether damage internalization as a whole
+is converged.
+
+```{r combined, results = "asis"}
+
+scc <- mip::getPlotData("p80_sccConvergenceMaxDeviation_iter", params$gdx)
+gmt <- mip::getPlotData("p80_gmt_conv_iter", params$gdx)
+
+if (nrow(scc) == 0 || nrow(gmt) == 0) {
+  cat("no data")
+} else {
+  scc <- scc %>% rename("scc" = "p80_sccConvergenceMaxDeviation_iter") %>%
+    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+  gmt <- gmt %>% rename("gmt" = "p80_gmt_conv_iter") %>%
+    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+
+  comb <- full_join(scc, gmt, by = "iteration") %>%
+    arrange(.data$iteration) %>%
+    mutate(
+      "SCC gate" = ifelse(is.na(sccTol) | .data$scc <= sccTol, "pass", "fail"),
+      "Temp gate" = ifelse(is.na(tempTol) | .data$gmt <= tempTol, "pass", "fail"),
+      "converged" = ifelse(.data$`SCC gate` == "pass" & .data$`Temp gate` == "pass", "yes", "no")
+    )
+
+  knitr::kable(
+    comb %>% transmute(
+      iteration = .data$iteration,
+      `SCC max dev` = round(.data$scc, 4),
+      `GMT conv` = round(.data$gmt, 4),
+      `SCC gate` = .data$`SCC gate`,
+      `Temp gate` = .data$`Temp gate`,
+      converged = .data$converged
+    ),
+    row.names = FALSE
+  )
+}
+
+```

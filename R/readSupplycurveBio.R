@@ -7,9 +7,6 @@
 #' @param userfun Function that was used to fit the supplycurve. Is needed to calculate the supplycurve correctly.
 #' User can provide a functional form using the following syntax: \code{function(param,x)return(param[[1]] + param[[2]] * x ^param[[3]])}. This function is the default.
 #' @param mult_on Should the multiplication factor (read from the gdx) be applied on the entire forumla ("all"), or on the slope only ("slope"). Use "all" for REMIND 2.0 (this is the default) and "slope" for REMIND 1.7
-#' @importFrom gdx readGDX
-#' @importFrom magclass mbind collapseNames add_dimension getSets
-#' @importFrom remulator calc_supplycurve
 #' @author David Klein
 #' @seealso \code{\link[remulator]{emulator}}, \code{\link[remulator]{calc_supplycurve}}
 #' @export
@@ -19,12 +16,14 @@ readSupplycurveBio <- function(outputdirs,
                                },
                                mult_on = "all") {
 
+  rlang::check_installed("remulator")
+
   #########################################################################
   ####################### Internal functions ##############################
   #########################################################################
   # function to read parameter from gdx file
   .readpar <- function(gdx,name) {
-    out <- readGDX(gdx, name, format="first_found")
+    out <- gdx::readGDX(gdx, name, format="first_found")
     getNames(out) <- "dummy" # something has to be here, will be removed by collapseNames anyway
     out <- collapseNames(out)
     return(out)
@@ -33,10 +32,10 @@ readSupplycurveBio <- function(outputdirs,
   # function to read variable from gdx file
   .readvar <- function(gdx,name,enty=NULL) {
     if (is.null(enty)) {
-      out <- readGDX(gdx,name, format="first_found", field="l")
+      out <- gdx::readGDX(gdx,name, format="first_found", field="l")
       getNames(out) <- "dummy" # something has to be here, will be removed by collapseNames anyway
     } else {
-      out <- readGDX(gdx,name=name, format="first_found", field="l")[,,enty]
+      out <- gdx::readGDX(gdx,name=name, format="first_found", field="l")[,,enty]
     }
     out <- collapseNames(out)
     return(out)
@@ -52,7 +51,7 @@ readSupplycurveBio <- function(outputdirs,
 
   # retrieve run titles
   for (i in 1:length(gdx_path)) {
-    names(gdx_path)[i] <- readGDX(gdx_path[i],"c_expname", format="first_found")
+    names(gdx_path)[i] <- gdx::readGDX(gdx_path[i],"c_expname", format="first_found")
   }
 
   #########################################################################
@@ -89,7 +88,7 @@ readSupplycurveBio <- function(outputdirs,
   ###################### Calculate supplycurve ############################
   #########################################################################
 
-  supplycurve_unshifted <- calc_supplycurve(rem_point,fitcoef,userfun)
+  supplycurve_unshifted <- remulator::calc_supplycurve(rem_point,fitcoef,userfun)
 
   mult <- readAll(gdx_path,.readvar,name="v30_pricemult",asList=FALSE)
 

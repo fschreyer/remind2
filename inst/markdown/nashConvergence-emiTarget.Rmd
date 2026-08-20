@@ -1,0 +1,164 @@
+---
+title: "CO2 budget target convergence"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+params:
+  gdx: "fulldata.gdx"
+  warning: false
+  message: false
+  figWidth: 12
+---
+
+<style>
+  #header {
+    display: none !important
+  }
+  .main-container {
+    max-width: 95% !important;
+  }
+  .toc-content {
+    padding-left: 0px !important;
+  }
+  .svg-container {
+    margin: auto !important;
+  }
+</style>
+
+```{r loading_libraries, include=FALSE}
+
+library(dplyr)
+library(ggplot2)
+library(gdx)
+library(mip)
+library(plotly)
+library(remind2)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  error = TRUE,
+  fig.width = params$figWidth,
+  message = params$message,
+  warning = params$warning
+)
+
+```
+
+```{r setup, echo=FALSE, include=FALSE}
+
+emptyPlot <- function(var, df = NULL) {
+  cat(paste0("str() of raw data for '", var, "':\n"))
+  str(df)
+  p <- ggplot() +
+    annotate("text", x = 0, y = 0, label = paste0("no data for '", var, "' in this gdx")) +
+    theme_void()
+  ggplotly(p)
+}
+
+tol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_budgetCO2_absDevTol", react = "silent")))
+if (length(tol) == 0 || is.na(tol)) tol <- NA_real_
+
+# whether damages are internalized -> global budget check is one-sided (positive only)
+m2r <- suppressWarnings(gdx::readGDX(params$gdx, "module2realisation", react = "silent"))
+damagesOn <- !is.null(m2r) && m2r[m2r$modules == "internalizeDamages", 2] != "off"
+
+```
+
+The global CO2 budget criterion requires the cumulated CO2 emissions to stay within
+**+-`r ifelse(is.na(tol), "cm_budgetCO2_absDevTol", tol)` Gt CO2** of the target budget
+(`cm_budgetCO2_absDevTol`). Positive deviation = target budget **exceeded**.
+
+`r if (damagesOn) "**Damages are internalized in this run**, so only *positive* deviation (budget overshoot) is checked - a budget undershoot is acceptable." else "Both positive and negative deviations are checked (symmetric band)."`
+
+## Convergence summary — global budget deviation
+
+Absolute deviation of cumulated global CO2 emissions from the target budget, over
+iterations. The shaded band is the tolerance; green points are inside it (converged),
+red are outside. This is the criterion that drives convergence.
+
+```{r global, results = "asis"}
+
+df <- mip::getPlotData("p80_globalBudget_absDev_iter", params$gdx)
+
+if (nrow(df) == 0) {
+  emptyPlot("p80_globalBudget_absDev_iter", df)
+} else {
+  df <- df %>%
+    rename("value" = "p80_globalBudget_absDev_iter") %>%
+    mutate(
+      "iteration" := as.numeric(as.character(.data$iteration)),
+      "converged" = if (is.na(tol)) "yes" else ifelse(.data$value > tol | (!damagesOn & .data$value < -tol), "no", "yes"),
+      "tooltip" = paste0("Iteration: ", .data$iteration,
+                         "<br>Deviation: ", round(.data$value, 3), " Gt CO2",
+                         ifelse(.data$value > 0, " (budget exceeded)", " (below budget)"))
+    )
+
+  p <- ggplot(df, aes_(x = ~iteration, y = ~value, text = ~tooltip, group = 1)) +
+    { if (!is.na(tol)) {
+        if (damagesOn) {
+          annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = tol,
+                   fill = "#00BFC4", alpha = 0.15)
+        } else {
+          annotate("rect", xmin = -Inf, xmax = Inf, ymin = -tol, ymax = tol,
+                   fill = "#00BFC4", alpha = 0.15)
+        }
+      } else NULL } +
+    { if (!is.na(tol)) geom_hline(yintercept = if (damagesOn) tol else c(-tol, tol),
+                                  linetype = "dashed", color = "grey40") else NULL } +
+    geom_hline(yintercept = 0, color = "grey80") +
+    geom_line(alpha = 0.7) +
+    suppressWarnings(geom_point(aes_(fill = ~converged), size = 2, shape = 21, color = "white")) +
+    scale_fill_manual(values = c("yes" = "#00BFC4", "no" = "#F8766D")) +
+    theme_bw() +
+    labs(x = "iteration", y = "deviation from target budget (Gt CO2)")
+
+  ggplotly(p, tooltip = c("text"))
+}
+
+```
+
+## Regional budget deviation
+
+Where a regional budget target is set, the absolute deviation per region over
+iterations. Dashed lines mark the +-`r ifelse(is.na(tol), "tolerance", tol)` Gt CO2 band.
+
+```{r regional, results = "asis"}
+
+dfr <- mip::getPlotData("p80_regionalBudget_absDev_iter", params$gdx)
+
+if (nrow(dfr) == 0) {
+  cat("No regional budget target active in this run.")
+} else {
+  dfr <- dfr %>%
+    rename("value" = "p80_regionalBudget_absDev_iter") %>%
+    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+
+  # drop regions that are all-zero across iterations (no regional target there)
+  active <- dfr %>%
+    group_by(.data$all_regi) %>%
+    summarise(nz = any(abs(.data$value) > 1e-9)) %>%
+    filter(.data$nz) %>%
+    pull(.data$all_regi)
+
+  dfr <- dfr %>% filter(.data$all_regi %in% active)
+
+  if (nrow(dfr) == 0) {
+    cat("No region has a non-zero regional budget deviation in this run.")
+  } else {
+    p <- ggplot(dfr, aes_(x = ~iteration, y = ~value, group = ~all_regi)) +
+      { if (!is.na(tol)) geom_hline(yintercept = c(-tol, tol),
+                                    linetype = "dashed", color = "grey50") else NULL } +
+      geom_hline(yintercept = 0, color = "grey80") +
+      geom_line(alpha = 0.7) +
+      geom_point(size = 0.8, alpha = 0.7) +
+      facet_wrap(~all_regi, scales = "free_y") +
+      theme_bw() +
+      labs(x = "iteration", y = "deviation from regional budget (Gt CO2)")
+
+    ggplotly(p)
+  }
+}
+
+```

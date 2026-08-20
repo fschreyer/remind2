@@ -26,8 +26,8 @@
 #'
 #' @importFrom dplyr %>% case_when distinct filter inner_join tibble left_join rename
 #' @importFrom gdx readGDX
-#' @importFrom magclass mbind getYears getRegions setNames dimExists new.magpie
-#' lowpass complete_magpie getItems<- getNames unitsplit unitjoin
+#' @importFrom magclass mbind getYears getRegions setNames dimExists new.magpie lowpass
+#' @importFrom magclass complete_magpie getItems<- getNames unitsplit unitjoin
 #' @importFrom quitte df.2.named.vector getColValues
 #' @importFrom readr read_csv
 #' @importFrom madrat toolAggregate
@@ -63,7 +63,7 @@ reportPrices <- function(gdx, output = NULL, regionSubsetList = NULL,
   ####### conversion factors ##########
   s_GWP_CH4 <- readGDX(gdx, c("sm_gwpCH4", "s_gwpCH4", "s_GWP_CH4"), format = "first_found", react = "silent")
   s_GWP_N2O <- readGDX(gdx, c("s_gwpN2O", "s_GWP_N2O"), format = "first_found", react = "silent")
-  s_twa2mwh <- readGDX(gdx, "sm_TWa_2_MWh", format = "first_found", reacht = "silent")
+  s_twa2mwh <- readGDX(gdx, "sm_TWa_2_MWh", format = "first_found", react = "silent")
   tdptwyr2dpgj <- 31.71   # TerraDollar per TWyear to Dollar per GJ
   p80_subset   <- c("perm", "good", "peur", "peoil", "pegas", "pecoal", "pebiolc") # TODO: read in from gdx as sets trade
   s_tBC_2_TWa <- readGDX(gdx, name = "sm_tBC_2_TWa", format = "first_found", react = "silent")
@@ -139,11 +139,11 @@ reportPrices <- function(gdx, output = NULL, regionSubsetList = NULL,
 
 
   sector <- emi_sectors <- all_emiMkt <- NULL
+
   fe.entries <- entyFe2Sector %>%
     left_join(sector2emiMkt, by = "emi_sectors", relationship = "many-to-many") %>%
     rename(sector = emi_sectors, emiMkt = all_emiMkt) %>%
-    filter(sector != "CDR")
-
+    filter(!(sector %in% c("CDR", "cdr")))
 
   fe.entries.dot <- paste(fe.entries[, 1], fe.entries[, 2], fe.entries[, 3], sep = ".")
 
@@ -278,8 +278,9 @@ reportPrices <- function(gdx, output = NULL, regionSubsetList = NULL,
                         "Price|Primary Energy|Gas (US$2017/GJ)"),
                setNames(mselect(pm_PEPrice, all_enty = "pecoal") * tdptwyr2dpgj,
                         "Price|Primary Energy|Coal (US$2017/GJ)"),
-               setNames(mselect(pm_PEPrice, all_enty = "peur") * tdptwyr2dpgj,
-                        "Price|Primary Energy|Nuclear (US$2017/GJ)"),
+                # nuclear fuel prices for uranium are in T$/Mt_Ur in REMIND, transform to $/kg_Ur
+               setNames(mselect(pm_PEPrice, all_enty = "peur") * 1e3,
+                        "Price|Primary Energy|Nuclear (US$2017/kg_Ur)"),
                ## only modern (ligno-cellulosic) biomass reported
                setNames(mselect(pm_PEPrice, all_enty = "pebiolc") * tdptwyr2dpgj,
                         "Price|Primary Energy|Biomass|Modern (US$2017/GJ)"),
@@ -902,7 +903,7 @@ reportPrices <- function(gdx, output = NULL, regionSubsetList = NULL,
     "Price|Primary Energy|Oil (US$2017/GJ)"                            = "PE|Oil (EJ/yr)",
     "Price|Primary Energy|Gas (US$2017/GJ)"                            = "PE|Gas (EJ/yr)",
     "Price|Primary Energy|Coal (US$2017/GJ)"                           = "PE|Coal (EJ/yr)",
-    "Price|Primary Energy|Nuclear (US$2017/GJ)"                        = "PE|Nuclear (EJ/yr)",
+    "Price|Primary Energy|Nuclear (US$2017/kg_Ur)"                     = "PE|Nuclear (EJ/yr)",
     "Price|Primary Energy|Biomass|1st Generation|Sugar and Starch (US$2017/GJ)" = "PE|Biomass|1st Generation (EJ/yr)",
     "Price|Primary Energy|Biomass|1st Generation|Oil-based (US$2017/GJ)" = "PE|Biomass|1st Generation (EJ/yr)",
 

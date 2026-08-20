@@ -331,8 +331,6 @@ reportExtraEmissions <- function(mif, extraData, gdx) {
   out <- mbind(out, setItems(dimSums(out, dim = 1), dim = 1, value = "World"))
 
   # 3. Aggregate AP emissions with variables from reportAirPollutantEmissions----
-  ## Warning: Totals need to be updated to also include MAgPIE AP emissions
-  ##          once they become available to REMIND
 
   # Read variables reported in reportAirPollutantEmissions
   reportAPvars <- c(
@@ -342,7 +340,8 @@ reportExtraEmissions <- function(mif, extraData, gdx) {
     paste0("Emi|", airpollutants, "|Energy|Supply"),
     paste0("Emi|", airpollutants, "|Industrial Processes"),
     paste0("Emi|", airpollutants, "|Product Use|Solvents"),
-    paste0("Emi|", airpollutants, "|Waste")
+    paste0("Emi|", airpollutants, "|Waste"),
+    paste0("Emi|", airpollutants, "|AFOLU")
   )
   reportAgg <- report %>%
     filter(.data$variable %in% reportAPvars) %>%
@@ -437,7 +436,8 @@ reportExtraEmissions <- function(mif, extraData, gdx) {
       setNames(
         dimSums(reportAgg[, , c(
           paste0("Emi|", spec, "|Product Use|Solvents.Mt ", spec, "/yr"),
-          paste0("Emi|", spec, "|Waste.Mt ", spec, "/yr")
+          paste0("Emi|", spec, "|Waste.Mt ", spec, "/yr"),
+          paste0("Emi|", spec, "|AFOLU.Mt ", spec, "/yr")
         )], dim = 3) +
           out[, , paste0("Emi|", spec, "|w/o Bunkers|Energy and Industrial Processes (Mt ", spec, "/yr)")],
         paste0("Emi|", spec, "|w/o Bunkers (Mt ", spec, "/yr)")
@@ -449,30 +449,14 @@ reportExtraEmissions <- function(mif, extraData, gdx) {
       setNames(
         dimSums(reportAgg[, , c(
           paste0("Emi|", spec, "|Product Use|Solvents.Mt ", spec, "/yr"),
-          paste0("Emi|", spec, "|Waste.Mt ", spec, "/yr")
+          paste0("Emi|", spec, "|Waste.Mt ", spec, "/yr"),
+          paste0("Emi|", spec, "|AFOLU.Mt ", spec, "/yr")
         )], dim = 3) +
           out[, , paste0("Emi|", spec, "|w/ Bunkers|Energy and Industrial Processes (Mt ", spec, "/yr)")],
         paste0("Emi|", spec, "|w/ Bunkers (Mt ", spec, "/yr)")
       )
     )
   }
-
-
-  # Set emissions to zero that are not represented but that are required for
-  # earth system harmonization
-  out <- add_columns(out, addnm = "Emi|CH4|Extra|Energy Demand|International Aviation (Mt CH4/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CH4|Extra|Energy Demand|Domestic Aviation (Mt CH4/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CH4|Extra|Energy Demand|Transport (Mt CH4/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CH4|Extra|Energy Demand|Industry (Mt CH4/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CH4|Extra|Industrial Processes (Mt CH4/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CH4|Extra|Solvents (Mt CH4/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CO2|Extra|Land Use|Agriculture (Mt CO2/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CO2|Extra|Land Use|Forest Burning (Mt CO2/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CO2|Extra|Land Use|Savannah Burning (Mt CO2/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CO2|Extra|Land Use|Peat Burning (Mt CO2/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|CO2|Extra|Solvents (Mt CO2/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|N2O|Extra|Energy Demand|Industry (kt N2O/yr)", dim = 3.1, fill = 0)
-  out <- add_columns(out, addnm = "Emi|N2O|Extra|Solvents (kt N2O/yr)", dim = 3.1, fill = 0)
 
   # Convert to quitte and ensure it has the same model and scenario as the original report
   out <- as.quitte(out)

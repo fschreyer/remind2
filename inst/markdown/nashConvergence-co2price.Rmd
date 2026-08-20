@@ -1,0 +1,364 @@
+---
+title: "CO2 price convergence"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+params:
+  gdx: "fulldata.gdx"
+  warning: false
+  message: false
+  figWidth: 12
+---
+
+<style>
+  .main-container {
+    max-width: 95% !important;
+  }
+  .toc-content {
+    padding-left: 0px !important;
+  }
+  .svg-container {
+    margin: auto !important;
+  }
+
+</style>
+
+```{r loading_libraries, include=FALSE}
+
+library(dplyr)
+library(gdx)
+library(ggplot2)
+library(magclass)
+library(mip)
+library(plotly)
+library(remind2)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  error = TRUE,
+  fig.width = params$figWidth,
+  message = params$message,
+  warning = params$warning
+)
+
+```
+
+
+```{r setup, echo=FALSE, include=FALSE}
+
+# Value column returned by mip::getPlotData is named after the variable, while
+# the set dimensions keep their gdx names ("iteration" and "ttot" here). The
+# helpers below abstract the read-and-plot step per dimensionality so each
+# variable section stays a one-liner.
+
+# placeholder shown when a variable is absent/empty in this gdx (ggplotly()
+# errors on a zero-row data frame, so we substitute an annotated blank plot).
+# Also dumps str() of the raw data for debugging why it came back empty.
+emptyPlot <- function(var, df = NULL) {
+  cat(paste0("str() of raw data for '", var, "':\n"))
+  str(df)
+  p <- ggplot() +
+    annotate("text", x = 0, y = 0, label = paste0("no data for '", var, "' in this gdx")) +
+    theme_void()
+  ggplotly(p)
+}
+
+# only an iteration dimension -> static line/point over iterations
+plotOverIterations <- function(var, gdx = params$gdx) {
+  df <- mip::getPlotData(var, gdx) %>%
+    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+
+  if (nrow(df) == 0) return(emptyPlot(var, df))
+
+  p <- ggplot(df, aes(x = .data$iteration, y = .data[[var]])) +
+    geom_line(alpha = 0.6) +
+    geom_point(size = 1) +
+    theme_bw() +
+    labs(x = "iteration", y = var)
+
+  ggplotly(p)
+}
+
+# combine several iteration-indexed flags into one strip plot: iteration on x,
+# one row per variable on y, discrete colour (blue = 0, red = nonzero). Missing
+# iterations are filled with 0 so every variable spans the full iteration axis
+# (cf. "Max. Trade Surplus" in plotNashConvergence.R).
+plotFlipflopStrip <- function(vars, gdx = params$gdx) {
+  lastIteration <- readGDX(gdx, "o_iterationNumber", react = "error")[[1]]
+  iterations <- data.frame(iteration = seq_len(lastIteration))
+
+  df <- lapply(vars, function(v) {
+    d <- mip::getPlotData(v, gdx)
+    have <- if (nrow(d) == 0) {
+      data.frame(iteration = numeric(0), value = numeric(0))
+    } else {
+      data.frame(iteration = as.numeric(as.character(d$iteration)), value = d[[v]])
+    }
+    full <- left_join(iterations, have, by = "iteration")
+    full$value[is.na(full$value)] <- 0
+    full$variable <- v
+    full
+  }) %>% bind_rows()
+
+  df$variable <- factor(df$variable, levels = rev(vars))
+  df$state <- factor(ifelse(df$value == 0, "0", "1"), levels = c("0", "1"))
+
+  p <- suppressWarnings(ggplot(df, aes(
+    x = .data$iteration, y = .data$variable,
+    color = .data$state, text = paste0("value: ", .data$value)
+  )) +
+    geom_point(size = 2, alpha = 0.6) +
+    scale_color_manual(values = c("0" = "blue", "1" = "red"), drop = FALSE) +
+    scale_y_discrete(drop = FALSE) +
+    theme_minimal() +
+    labs(x = NULL, y = NULL, color = "value"))
+
+  pl <- ggplotly(p, tooltip = c("x", "y", "text"), height = 120 + 70 * length(vars)) %>%
+    hide_legend() %>%
+    config(displayModeBar = FALSE, displaylogo = FALSE)
+
+  htmltools::tagList(pl)
+}
+
+# only a period dimension -> static line/point over periods
+plotOverPeriod <- function(var, gdx = params$gdx) {
+  df <- mip::getPlotData(var, gdx) %>%
+    mutate("ttot" := as.numeric(as.character(.data$ttot)))
+
+  if (nrow(df) == 0) return(emptyPlot(var, df))
+
+  p <- ggplot(df, aes(x = .data$ttot, y = .data[[var]])) +
+    geom_line(alpha = 0.6) +
+    geom_point(size = 1) +
+    theme_bw() +
+    labs(x = "period", y = var)
+
+  ggplotly(p)
+}
+
+# used by the animated period-vs-iteration plots below
+adjustSliderAnimation <- function(p) {
+  return(list(p[[1]] %>% plotly::animation_opts(frame = 1)))
+}
+
+# period x iteration -> animated, period on x with a slider over iterations.
+# Returns a tagList so the calling chunk can render it directly.
+plotOverPeriodBySlider <- function(var, gdx = params$gdx) {
+  df <- mip::getPlotData(var, gdx) %>%
+    mutate("ttot" := as.numeric(as.character(.data$ttot)))
+
+  if (nrow(df) == 0) return(htmltools::tagList(emptyPlot(var, df)))
+
+  p <- mip::mipIterations(
+    plotData = df,
+    xAxis = "ttot",
+    facets = NULL,
+    color = NULL,
+    slider = "iteration"
+  ) %>% adjustSliderAnimation()
+
+  htmltools::tagList(p)
+}
+
+```
+
+
+## Model configuration
+
+Initial scalar configuration read from the gdx (missing entries show as `NA`).
+
+*These switches define the CO2 target and the price-adjustment algorithm — the context
+for every chart below. Check them first to confirm what the run was actually solving.*
+
+```{r config_read}
+configVars <- c(
+  "cm_budgetCO2from2020", "carbonprice", "cm_taxCO2_functionalForm", "cm_taxCO2_peakBudgYr",
+  "cm_peakBudgYr", "cm_taxCO2_IncAfterPeakBudgYr", "cm_nash_autoconverge", "cm_budgetCO2_absDevTol",
+  "sm_peakbudget_diff_tolerance", "cm_iterative_target_adj"
+)
+
+readScalar <- function(v) {
+  x <- suppressWarnings(gdx::readGDX(params$gdx, v, react = "silent"))
+  if (is.null(x)) return(NA_character_)
+  paste(as.character(as.vector(x)), collapse = ", ")
+}
+
+configTable <- data.frame(variable = configVars, value = vapply(configVars, readScalar, character(1)))
+```
+
+```{r config_table}
+knitr::kable(configTable, row.names = FALSE)
+```
+
+
+## Actual peak emissions year
+
+peak budget year calculated based on maximum of cumulative CO2 emissions, used to check adjustment algorithm [year]
+
+*The year where cumulative CO2 peaks in the final solution. Compare it with the target
+`cm_peakBudgYr` above — a mismatch (or a value that keeps jumping between iterations) is
+exactly what the peak-budget algorithm is trying to resolve.*
+
+```{r peak_year, results = "asis"}
+p45_peakBudgYr_check <- readGDX(params$gdx, "p45_peakBudgYr_check")
+allperiods <- getYears(p45_peakBudgYr_check, as.integer = TRUE)
+actualPeakBudgYr <- allperiods[p45_peakBudgYr_check == 1]
+cat(actualPeakBudgYr)
+```
+
+
+## CO2 tax anchor
+
+The CO2 price path REMIND rescales each iteration to hit the carbon budget. These charts
+track the anchor price and its iteration-to-iteration change.
+
+### p45_taxCO2eq_anchor_iter
+
+save p45_taxCO2eq_anchor in each iteration (before entering functionalForm/postsolve.gms) for debugging
+
+<!-- animated: x: period, slider: iteration -->
+
+*x = period, slider = iteration: the CO2 price trajectory as it is re-anchored each
+iteration. Advancing the slider, the curve should stop shifting once the budget is met.*
+
+```{r results = "asis"}
+plotOverPeriodBySlider("p45_taxCO2eq_anchor_iter")
+```
+
+### o45_taxCO2eq_anchor_iterDiff_Itr
+
+track pm_taxCO2eq_anchor_iterationdiff in 2100 over iterations
+
+*x = iteration: how much the 2100 anchor price still changed from the previous
+iteration. It should decay toward 0 — a flat non-zero or oscillating line means the
+price is not settling.*
+
+```{r}
+plotOverIterations("o45_taxCO2eq_anchor_iterDiff_Itr")
+```
+
+### p45_taxCO2eq_anchor_iterationdiff_tmp
+
+help parameter for iterative adjustment of taxes
+
+*x = period, slider = iteration: the per-period tax adjustment applied that iteration.
+Shrinking magnitudes across the slider indicate convergence.*
+
+```{r results = "asis"}
+plotOverPeriodBySlider("p45_taxCO2eq_anchor_iterationdiff_tmp")
+```
+
+
+## CO2 budget and peak budget year
+
+Whether the cumulative-emissions budget and the timing of its peak are being met, and
+how they move across iterations.
+
+### o45_diff_to_Budg
+
+Difference between actual CO2 budget and target CO2 budget
+
+*x = iteration; converges when it reaches ~0 (within `cm_budgetCO2_absDevTol`). Positive
+= the budget was overshot.*
+
+```{r}
+plotOverIterations("o45_diff_to_Budg")
+```
+
+### o45_totCO2emi_peakBudgYr
+
+Total CO2 emissions in the peakBudgYr
+
+*x = iteration: emissions in the peak year; watch them settle as the price path
+stabilises.*
+
+```{r}
+plotOverIterations("o45_totCO2emi_peakBudgYr")
+```
+
+### o45_peakBudgYr_Itr
+
+Year in which the CO2 budget is supposed to peak. Is changed in iterative_target_adjust = 9
+
+*x = iteration: the assumed peak year. Back-and-forth jumps here are the flip-flopping
+the algorithm tries to damp (see Flip-flop tracking below).*
+
+```{r}
+plotOverIterations("o45_peakBudgYr_Itr")
+```
+
+### o45_totCO2emi_allYrs
+
+Global CO2 emissions over time and iterations. Needed to check the procedure to find the peakBudgYr
+
+*x = period, slider = iteration: the full emissions trajectory; the peak of this curve
+is what determines the peak-budget year.*
+
+<!-- animated: x: period, slider: iteration -->
+
+```{r results = "asis"}
+plotOverPeriodBySlider("o45_totCO2emi_allYrs")
+```
+
+### o45_change_totCO2emi_peakBudgYr
+
+Measure for how much the CO2 emissions change around the peakBudgYr
+
+*x = iteration: curvature of emissions around the peak year — near-flat means a
+well-defined, stable peak.*
+
+```{r}
+plotOverIterations("o45_change_totCO2emi_peakBudgYr")
+```
+
+## CO2 price rescaling
+
+The multiplicative factors applied to the CO2 price each iteration to steer it toward
+the budget. A factor near 1 means little further adjustment is needed.
+
+### p45_factorRescale_taxCO2
+
+Multiplicative factor for rescaling the CO2 price to reach the target
+
+*x = iteration; should converge to 1. Values far from 1, or oscillating around it, mean
+the price is still being pushed hard.*
+
+```{r}
+plotOverIterations("p45_factorRescale_taxCO2")
+```
+
+### p45_factorRescale_taxCO2_Funneled
+
+Multiplicative factor for rescaling the CO2 price to reach the target - limited by an iteration-dependent funnel
+
+*The same factor after the funnel caps how far the price may move in one iteration.
+Compare it with the un-funneled factor above to see when the cap is binding.*
+
+```{r}
+plotOverIterations("p45_factorRescale_taxCO2_Funneled")
+```
+
+
+## Flip-flop tracking
+
+Iteration on the x-axis, one row per variable; blue = 0, red = nonzero. Missing iterations are filled with 0 (hover for the actual value).
+
+*A red dot flags an iteration where that counter fired — the peak-budget logic detected
+or absorbed flip-flopping of the peak year. Long red stretches mean the algorithm is
+struggling to pin down a stable peak; all-blue is the healthy case.*
+
+- o45_pkBudgYr_flipflop: Counter that tracks if flipfloping of cm_peakBudgYr occured in the last iterations
+- o45_delay_increase_peakBudgYear: Counter that tracks if flip-flopping of peakBudgYr happened. Starts an inner loop to try and overcome this
+- o45_reached_until2150pricepath: Counter that tracks if the inner loop of increasing the CO2 price AFTER peakBudgYr goes beyond the initial trajectory
+- o45_factorRescale_taxCO2_afterPeakBudgYr: Multiplicative factor for rescaling the CO2 price in the year after peakBudgYr - only needed if flip-flopping of peakBudgYr occurs
+
+```{r results = "asis"}
+plotFlipflopStrip(c(
+  "o45_pkBudgYr_flipflop",
+  "o45_delay_increase_peakBudgYear",
+  "o45_reached_until2150pricepath",
+  "o45_factorRescale_taxCO2_afterPeakBudgYr"
+))
+```

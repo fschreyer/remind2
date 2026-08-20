@@ -110,7 +110,7 @@ reportCosts <- function(gdx,
   v_costfu <- readGDX(gdx, name = c("v_costFu", "v_costfu"), field = "l", restore_zeros = FALSE, format = "first_found")
   v_costom <- readGDX(gdx, name = c("v_costOM", "v_costom"), field = "l", format = "first_found")
   v_costin <- readGDX(gdx, name = c("v_costInv", "v_costin"), field = "l", format = "first_found")
-  vm_omcosts_cdr <- readGDX(gdx, name = c("vm_omcosts_cdr"), field = "l", format = "first_found")
+  vm_EW_transport_costs <- readGDX(gdx, name = c("vm_omcosts_cdr", "vm_EW_transport_costs"), field = "l", format = "first_found")
   v_investcost <- readGDX(gdx, name = c("vm_costTeCapital", "v_costTeCapital", "v_investcost"), field = "l", format = "first_found")
   vm_cap <- readGDX(gdx, name = c("vm_cap"), field = "l", format = "first_found")
   vm_cap[is.na(vm_cap)] <- 0
@@ -187,7 +187,7 @@ reportCosts <- function(gdx,
   sebal.m <- sebal.m[, y, ]
   febalForUe.m <- febalForUe.m[, y, ]
   balfinen.m <- balfinen.m[, y, ]
-  vm_omcosts_cdr <- vm_omcosts_cdr[, y, ]
+  vm_EW_transport_costs <- vm_EW_transport_costs[, y, ]
   output <- output[, y, ]
   p_eta_conv <- p_eta_conv[, y, ]
 
@@ -601,7 +601,7 @@ reportCosts <- function(gdx,
   tmp <- mbind(tmp, setNames(v_costom * 1000, "OandM costs (billion US$2017/yr)"))
 
   ##### CDR
-  tmp <- mbind(tmp, setNames(vm_omcosts_cdr * 1000, "OandM costs CDR (billion US$2017/yr)"))
+  tmp <- mbind(tmp, setNames(vm_EW_transport_costs * 1000, "OandM transport costs EW (billion US$2017/yr)"))
 
   #####################################
   ########## Operational costs ########
