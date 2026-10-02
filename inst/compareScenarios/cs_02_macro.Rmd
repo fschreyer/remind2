@@ -3,21 +3,21 @@
 
 ## Consumption
 
-```{r Consumption}
+```{r 02_macro/Consumption}
 showLinePlots(data, "Consumption")
 ```
 
 
 ## Population
 
-```{r Population}
+```{r 02_macro/Population}
 showLinePlots(data, "Population")
 ```
 
 ## GDP
 ### GDP - MER
 
-```{r GDP - MER}
+```{r 02_macro/GDP - MER}
 showLinePlots(data, "GDP|MER")
 
 for (item in grep("^GDP\\|MER\\|.*(Macro-Economic Climate Damage|chronic physical risk damage estimate)", levels(data$variable), value = TRUE)) {
@@ -28,7 +28,7 @@ for (item in grep("^GDP\\|MER\\|.*(Macro-Economic Climate Damage|chronic physica
 
 ### GDP - PPP
 
-```{r GDP - PPP}
+```{r 02_macro/GDP - PPP}
 showLinePlots(data, "GDP|PPP")
 
 for (item in grep("^GDP\\|PPP\\|.*(Macro-Economic Climate Damage|chronic physical risk damage estimate)", levels(data$variable), value = TRUE)) {
@@ -43,43 +43,43 @@ if ("Damage factor" %in% levels(data$variable)) {
 
 ### GDP - MER per Capita
 
-```{r GDP - MER per Capita}
+```{r 02_macro/GDP - MER per Capita}
 showLinePlots(data, "GDP|MER pCap")
 ```
 
 ### GDP - PPP per Capita
 
-```{r GDP - PPP per Capita}
+```{r 02_macro/GDP - PPP per Capita}
 showLinePlots(data, "GDP|PPP pCap")
 ```
 
 ### GDP - PPP growth rate
-```{r GDP - PPP growth rate}
+```{r 02_macro/GDP - PPP growth rate}
 showLinePlots(quitte::calc_growthrate(data, only.new = TRUE, filter.function = "GDP|PPP"), "GDP|PPP [Growth Rate]")
 ```
 
 ### GDP - MER growth rate
-```{r GDP - MER growth rate}
+```{r 02_macro/GDP - MER growth rate}
 showLinePlots(quitte::calc_growthrate(data, only.new = TRUE, filter.function = "GDP|MER"), "GDP|MER [Growth Rate]")
 ```
 
 ## Capital Stock
 
 
-```{r Capital Stock}
+```{r 02_macro/Capital Stock}
 showLinePlots(data, "Capital Stock|Non-ESM")
 ```
 
 ## Investments
 
-```{r Investments}
+```{r 02_macro/Investments}
 showLinePlots(data, "Investments|Macroeconomy")
 ```
 
 
 ## Interest Rate
 
-```{r Interest Rate}
+```{r 02_macro/Interest Rate}
 showLinePlots(data, "Interest Rate (t+1)/(t-1)|Real")
 ```
 
@@ -88,7 +88,7 @@ showLinePlots(data, "Interest Rate (t+1)/(t-1)|Real")
 
 ### Top-level GDP Disaggregation
 
-```{r GDP Disaggregation}
+```{r 02_macro/GDP Disaggregation}
 
 tot <- "GDP|MER"
 items <- c(
@@ -104,7 +104,7 @@ showAreaAndBarPlots(data, items, tot, scales = "fixed")
 
 ### Transport Value Disaggregation
 
-```{r Transport Value Disaggregtion}
+```{r 02_macro/Transport Value Disaggregtion}
 
 tot <- "Internal|CES Function|Value|entrp"
 items <- c(
@@ -118,7 +118,7 @@ showAreaAndBarPlots(data, items, tot, scales = "fixed")
 
 ### Buildings Value Disaggregation
 
-```{r Buildings Value Disaggregtion}
+```{r 02_macro/Buildings Value Disaggregtion}
 
 tot <- "Internal|CES Function|Value|enb"
 items <- c(
@@ -134,7 +134,7 @@ showAreaAndBarPlots(data, items, tot, scales = "fixed")
 
 ### Industry Value Disaggregation
 
-```{r Industry Value Disaggregtion}
+```{r 02_macro/Industry Value Disaggregtion}
 
 tot <- "Internal|CES Function|Value|ue_industry"
 items <- c(
@@ -150,7 +150,7 @@ showAreaAndBarPlots(data, items, tot, scales = "fixed")
 
 ## Prices
 
-```{r Prices preprocessing}
+```{r 02_macro/Prices preprocessing}
 # Local (this subsection) preprocessing for all price variables.
 dPrice <- data %>%
     filter(scenario != "historical") %>%
@@ -162,7 +162,7 @@ dPrice <- data %>%
 
 ### PE Prices
 
-```{r PE Prices}
+```{r 02_macro/PE Prices}
 vars <-
   levels(dPrice$variable) %>%
   str_subset("^Price\\|Primary Energy\\|")
@@ -172,7 +172,7 @@ walk(vars, showLinePlots, data = dPrice, scale = "fixed")
 ### SE Prices
 
 
-```{r SE Prices}
+```{r 02_macro/SE Prices}
 vars <-
   levels(dPrice$variable) %>%
   str_subset("^Price\\|Secondary Energy\\|")
@@ -181,7 +181,7 @@ walk(vars, showLinePlots, data = dPrice, scale = "fixed")
 
 ### FE|Buildings Prices
 
-```{r FE Buildings Prices}
+```{r 02_macro/FE Buildings Prices}
 carriers <- c("Solids", "Liquids", "Gases", "Hydrogen", "Heat", "Electricity")
 vars <- intersect(paste0("Price|Final Energy|Buildings|", carriers, "|Rawdata"),
                   levels(dPrice$variable))
@@ -190,7 +190,7 @@ walk(vars, showLinePlots, data = dPrice, scale = "fixed")
 
 ### FE|Industry Prices
 
-```{r FE Industry Prices}
+```{r 02_macro/FE Industry Prices}
 carriers <- c("Solids", "Liquids", "Gases", "Hydrogen", "Heat", "Electricity")
 vars <- intersect(paste0("Price|Final Energy|Industry|", carriers, "|Rawdata"),
                   levels(dPrice$variable))
@@ -199,7 +199,7 @@ walk(vars, showLinePlots, data = dPrice, scale = "fixed")
 
 ### FE|Transport Prices
 
-```{r FE Transport Prices}
+```{r 02_macro/FE Transport Prices}
 carriers <- c("Solids", "Liquids", "Gases", "Hydrogen", "Heat", "Electricity")
 vars <- intersect(paste0("Price|Final Energy|Transport|", carriers, "|Rawdata"),
                   levels(dPrice$variable))
@@ -208,7 +208,7 @@ walk(vars, showLinePlots, data = dPrice, scale = "fixed")
 
 ### SE Imports Prices
 
-```{r SE Imports Prices}
+```{r 02_macro/SE Imports Prices}
 vars <-
   levels(data$variable) %>%
   str_subset("^Trade\\|Price\\|Imports\\|SE\\|")
@@ -217,7 +217,7 @@ walk(vars, showLinePlots, data = data)
 
 ### SE Exports Trade
 
-```{r SE Exports Trade}
+```{r 02_macro/SE Exports Trade}
 vars <-
   levels(data$variable) %>%
   str_subset("^Trade\\|Price\\|Exports\\|SE\\|")
@@ -228,7 +228,7 @@ walk(vars, showLinePlots, data = data)
 
 ### PE Trade
 
-```{r PE Trade}
+```{r 02_macro/PE Trade}
 vars <-
   levels(data$variable) %>%
   str_subset("^Trade\\|(Uranium.)?[^|]*$")
@@ -237,7 +237,7 @@ walk(vars, showLinePlots, data = data)
 
 ### SE Trade
 
-```{r SE Trade}
+```{r 02_macro/SE Trade}
 vars <-
   levels(data$variable) %>%
   str_subset("^Trade\\|SE\\|")
@@ -248,7 +248,7 @@ walk(vars, showLinePlots, data = data)
 ## FE intensity of GDP_PPP
 ### area plot
 
-```{r FE intensity of GDP_PPP, area plot (by sector)}
+```{r 02_macro/FE intensity of GDP_PPP, area plot (by sector)}
 items <- c(
   "FE|Transport pGDP_PPP",
   "FE|Buildings pGDP_PPP",
@@ -258,7 +258,7 @@ showAreaAndBarPlots(data, items, scales = "fixed")
 
 ### line plot
 
-```{r FE intensity of GDP_PPP, line plot (by sector)}
+```{r 02_macro/FE intensity of GDP_PPP, line plot (by sector)}
 dIea <-
   data %>%
   # To make the plots less crowded, show only IEA historical data.
@@ -273,7 +273,7 @@ showMultiLinePlotsByVariable(dIea, items, "GDP|PPP pCap", scales = "fixed")
 
 ## Kaya Decomposition
 
-```{r Kaya Decomposition}
+```{r 02_macro/Kaya Decomposition}
 d <-
   data %>%
   filter(variable %in% c("Emi|CO2|Energy", "FE", "GDP|MER",  "GDP|PPP","Population")) %>%
@@ -329,22 +329,22 @@ kayaRel <-
 
 ### Absolute
 
-```{r Kaya Decomposition Absolute}
+```{r 02_macro/Kaya Decomposition Absolute}
 showMultiLinePlots(kaya, kayaVars, nrowNum = 2)
 walk(kayaVars, showRegiLinePlots, data = kaya)
 ```
 
-```{r Kaya Decomposition Relative text, results='asis'}
+```{r 02_macro/Kaya Decomposition Relative text, results='asis'}
 cat("### Relative to ", refYear, "\n")
 ```
 
-```{r Kaya Decomposition Relative}
+```{r 02_macro/Kaya Decomposition Relative}
 showMultiLinePlots(kayaRel, kayaVars, nrowNum = 2)
 walk(kayaVars, showRegiLinePlots, data = kayaRel)
 ```
 
 ### Components
 
-```{r Kaya Components}
+```{r 02_macro/Kaya Components}
 walk(kayaVars, showLinePlots, data = kaya)
 ```

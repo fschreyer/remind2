@@ -300,40 +300,62 @@ reportTax <- function(gdx, output = NULL, regionSubsetList = NULL, t = c(seq(200
   p21_taxrevImport0 <- readGDX(gdx, name = c("p21_taxrevImport0", "p21_taxrevBioImport0"), format = "first_found")[, t, ] * 1000
   out <- mbind(out, setNames(dimSums(p21_taxrevImport0, dim = 3), "Net Taxes|Primary energy import (billion US$2017/yr)"))
 
-  # report GHG tax revenues
-  out <- mbind(
-    out,
+  # Report GHG tax revenues, defined per sector as carbon price multiplpied by the respective emissions.
+  # Revenue may include some or all categories of GHG emissions, decomposed as follows:
+  # - Emi|GHG|+++|Energy
+  #     - Emi|GHG|Energy|+|Demand
+  #         - Emi|GHG|Energy|Demand|+|Buildings
+  #         - Emi|GHG|Energy|Demand|+|Transport
+  #         - Emi|GHG|Energy|Demand|+|Industry  (here included in Emi|GHG|Industry)
+  #         - Emi|GHG|Energy|Demand|+|CDR
+  #     - Emi|GHG|Energy|+|Supply
+  # - Emi|GHG|+++|non-ES CDR
+  # - Emi|GHG|+++|Waste
+  # - Emi|GHG|+++|Industrial Processes          (here included in Emi|GHG|Industry)
+  # - Emi|GHG|+++|Agriculture                   (here purposefully ignored)
+  # - Emi|GHG|+++|Land-Use Change               (here purposefully ignored)
+  revenue <- mbind(
     setNames(
       output_wo_GLO[, , "Price|Carbon|Demand|Buildings (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|Energy|Demand|+|Buildings (Mt CO2eq/yr)"] / 1000,
       "Revenue|Government|Tax|Carbon|+|Demand|Buildings (billion US$2017/yr)"
     ),
+
     setNames(
       output_wo_GLO[, , "Price|Carbon|Demand|Transport (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|Energy|Demand|+|Transport (Mt CO2eq/yr)"] / 1000,
       "Revenue|Government|Tax|Carbon|+|Demand|Transport (billion US$2017/yr)"
     ),
-    setNames(
+
+    # Emi|GHG|Industry includes emissions of CO2 in industry and industrial processes, N20 in industry, and system-wide F-gases
+    setNames( 
       output_wo_GLO[, , "Price|Carbon|Demand|Industry (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|Industry (Mt CO2eq/yr)"] / 1000,
       "Revenue|Government|Tax|Carbon|+|Demand|Industry (billion US$2017/yr)"
     ),
+
+    setNames( 
+      output_wo_GLO[, , "Price|Carbon (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|Energy|Demand|+|CDR (Mt CO2eq/yr)"] / 1000,
+      "Revenue|Government|Tax|Carbon|+|Demand|CDR (billion US$2017/yr)"
+    ),
+
+    setNames(
+      output_wo_GLO[, , "Price|Carbon|Supply (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|Energy|+|Supply (Mt CO2eq/yr)"] / 1000,
+      "Revenue|Government|Tax|Carbon|+|Supply (billion US$2017/yr)"
+    ),
+
     # AM: novel CDR (excluding biochar and BECCS), i.e. DACCS, ERW ad OAE (BECCS and biochar are accounted under energy supply)
     # For now no separate price for removals, identical to Energy supply CO2 price.
     setNames(
       output_wo_GLO[, , "Price|Carbon|Supply (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|+++|non-ES CDR (Mt CO2eq/yr)"] / 1000,
       "Revenue|Government|Tax|Carbon|+|non-ES CDR (billion US$2017/yr)"
     ),
+
     setNames(
-      output_wo_GLO[, , "Price|Carbon|Supply (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|Energy|+|Supply (Mt CO2eq/yr)"] / 1000,
-      "Revenue|Government|Tax|Carbon|+|Supply (billion US$2017/yr)"
+      output_wo_GLO[, , "Price|Carbon (US$2017/t CO2)"] * output_wo_GLO[, , "Emi|GHG|+++|Waste (Mt CO2eq/yr)"] / 1000,
+      "Revenue|Government|Tax|Carbon|+|Waste (billion US$2017/yr)"
     )
   )
-  out <- mbind(out, setNames(
-    out[, , "Revenue|Government|Tax|Carbon|+|Demand|Buildings (billion US$2017/yr)"]
-    + out[, , "Revenue|Government|Tax|Carbon|+|Demand|Transport (billion US$2017/yr)"]
-      + out[, , "Revenue|Government|Tax|Carbon|+|Demand|Industry (billion US$2017/yr)"]
-      + out[, , "Revenue|Government|Tax|Carbon|+|non-ES CDR (billion US$2017/yr)"]
-      + out[, , "Revenue|Government|Tax|Carbon|+|Supply (billion US$2017/yr)"],
-    "Revenue|Government|Tax|Carbon (billion US$2017/yr)"
-  ))
+
+  revenue <- mbind(revenue, setNames(dimSums(revenue, dim = 3), "Revenue|Government|Tax|Carbon (billion US$2017/yr)")) # sum of the above
+  out <- mbind(out, revenue)
 
   # reporting subsidy or tax rate necessary to reach implicit set energy bounds
   p47_implEnergyBoundTax <- readGDX(gdx, "p47_implEnergyBoundTax", format = "first_found", react = "silent")

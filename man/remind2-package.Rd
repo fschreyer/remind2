@@ -57,6 +57,7 @@ Authors:
   \item Jessica Strefler
   \item Philipp Verpoort
   \item Pascal Weigmann
+  \item Simon Krogmann
 }
 
 }

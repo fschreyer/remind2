@@ -1,13 +1,13 @@
 # Climate
 ## MAGICC6
 
-```{r Climate}
+```{r 07_climate/Climate}
 showLinePlots(data, "Forcing")
 showLinePlots(data, "Temperature|Global Mean")
 ```
 
 ## MAGICCv7.5.3 AR6
-```{r MAGICC7 AR6}
+```{r 07_climate/MAGICC7 AR6}
 magiccvar <- c("Effective Radiative Forcing|Basket|Anthropogenic",
                "Surface Temperature (GSAT)",
                "Atmospheric Concentrations|CO2")

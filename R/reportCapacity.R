@@ -179,10 +179,10 @@ reportCapacity <- function(gdx, regionSubsetList = NULL,
       get_cap(c("bioh2c"),            "|Hydrogen|Biomass|+|w/ CC"),
       get_cap(c("bioh2"),             "|Hydrogen|Biomass|+|w/o CC"),
 
-      get_cap(c("elh2", "elh2VRE"),   "|Hydrogen|+|Electricity"),
-      get_cap(c("elh2", "elh2VRE"),   " (GWel)|Hydrogen|Electricity", factor = 1 / pm_eta_conv[, , "elh2"]), # convert to electric power GWel
+      get_cap(c("elh2"),              "|Hydrogen|+|Electricity"),
+      get_cap(c("elh2"),              " (GWel)|Hydrogen|Electricity", factor = 1 / pm_eta_conv[, , "elh2"]), # convert to electric power GWel
 
-      get_cap(c("coalh2", "coalh2c", "gash2", "gash2c", "bioh2", "bioh2c", "elh2", "elh2VRE"), "|Hydrogen") # sum of the above, avoiding double counting
+      get_cap(c("coalh2", "coalh2c", "gash2", "gash2c", "bioh2", "bioh2c", "elh2"), "|Hydrogen") # sum of the above, avoiding double counting
     )
 
     # heat

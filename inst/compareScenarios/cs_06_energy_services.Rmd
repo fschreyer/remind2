@@ -53,7 +53,7 @@ indicators <- c(indicators_general, indicators_buildings, indicators_transport, 
 ```
 
 ### Time domain
-```{r, results = 'asis'}
+```{r 06_energy_services/Time domain, results = 'asis'}
 for (i in indicators[indicators %in% data[["variable"]]]) {
   cat("\n\n####", sub("(\\|per-capita)|( pCap)", "", i), "\n")
   showLinePlots(data, i, scales = "free")
@@ -61,7 +61,7 @@ for (i in indicators[indicators %in% data[["variable"]]]) {
 ```
 
 ### GDP domain, grouped regions
-```{r}
+```{r 06_energy_services/GDP domain grouped regions}
 #showMultiLinePlotsByVariable(dIea, indicators_general,   "GDP|PPP pCap")
 showMultiLinePlotsByVariable(dIea, indicators_buildings, "GDP|PPP pCap")
 showMultiLinePlotsByVariable(dIea, indicators_transport, "GDP|PPP pCap")
@@ -70,7 +70,7 @@ showMultiLinePlotsByVariable(dIea, indicators_industry_extended,  "GDP|PPP pCap"
 ```
 
 ### GDP domain, separated regions
-```{r, results = 'asis'}
+```{r 06_energy_services/GDP domain separated regions, results = 'asis'}
 indicators <- c(indicators_buildings, indicators_transport, indicators_industry, indicators_industry_extended)
 dPlot <- full_join(
   data %>%
@@ -121,7 +121,7 @@ for (i in indicators[indicators %in% data[["variable"]]]) {
 
 ## Buildings
 ### FE mix
-```{r FE demand from buildings by carriers}
+```{r 06_energy_services/FE demand from buildings by carriers}
 tot <- "FE|Buildings"
 items <- c(
   "FE|Buildings|non-Heating|Electricity|Conventional",
@@ -141,7 +141,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 ### FE mix per Capita
-```{r per Capita FE demand from buildings by carriers}
+```{r 06_energy_services/per Capita FE demand from buildings by carriers}
 tot <- "FE|Buildings pCap"
 items <- c(
   "FE|Buildings|non-Heating|Electricity|Conventional pCap",
@@ -162,7 +162,7 @@ if (any(items %in% data[["variable"]])) {
 ```
 
 ### UE mix
-```{r UE demand from buildings by carriers}
+```{r 06_energy_services/UE demand from buildings by carriers}
 tot <- "UE|Buildings"
 items <- c(
   "UE|Buildings|non-Heating|Electricity|Conventional",
@@ -182,7 +182,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 ### UE mix per Capita
-```{r per Capita UE demand from buildings by carriers}
+```{r 06_energy_services/per Capita UE demand from buildings by carriers}
 tot <- "UE|Buildings pCap"
 items <- c(
   "UE|Buildings|non-Heating|Electricity|Conventional pCap",
@@ -203,7 +203,7 @@ if (any(items %in% data[["variable"]])) {
 ```
 
 ### FE heating
-```{r FE demand from buildings for heating by carriers}
+```{r 06_energy_services/FE demand from buildings for heating by carriers}
 tot <- "FE|Buildings|Heating"
 items <- c(
   "FE|Buildings|Heating|Electricity|Heat pump",
@@ -219,7 +219,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 ### FE heating per capita
-```{r per Capita FE demand from buildings for heating by carriers}
+```{r 06_energy_services/per Capita FE demand from buildings for heating by carriers}
 if ("FE|Buildings|Heating|Electricity|Heat pump pCap" %in% data[["variable"]]) {
   tot <- "FE|Buildings|Heating pCap"
   items <- c(
@@ -236,7 +236,7 @@ if ("FE|Buildings|Heating|Electricity|Heat pump pCap" %in% data[["variable"]]) {
 ```
 
 ### UE heating
-```{r UE demand from buildings for heating by carriers}
+```{r 06_energy_services/UE demand from buildings for heating by carriers}
 tot <- "UE|Buildings|Heating"
 items <- c(
   "UE|Buildings|Heating|Electricity|Heat pump",
@@ -252,7 +252,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 ### UE heating per Capita
-```{r per Capita UE demand from buildings for heating by carriers}
+```{r 06_energy_services/per Capita UE demand from buildings for heating by carriers}
 if ("UE|Buildings|Heating|Electricity|Heat pump pCap" %in% data[["variable"]]) {
   tot <- "UE|Buildings|Heating pCap"
   items <- c(
@@ -274,7 +274,7 @@ if ("UE|Buildings|Heating|Electricity|Heat pump pCap" %in% data[["variable"]]) {
 ### FE
 
 #### FE Pass mix by mode w/ bunkers
-```{r FE Pass mix by mode w/ bunkers}
+```{r 06_energy_services/FE Pass mix by mode with bunkers}
 tot <- "FE|Transport|Pass"
 items <- c(
   "FE|Transport|Bunkers|Pass|International Aviation",
@@ -289,7 +289,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### FE Pass mix by mode w/ bunkers - per capita
-```{r FE Pass mix by mode w/ bunkers - per capita}
+```{r 06_energy_services/FE Pass mix by mode with bunkers - per capita}
 tot <- "FE|Transport|Pass pCap"
 items <- c(
   "FE|Transport|Bunkers|Pass|International Aviation pCap",
@@ -306,7 +306,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ### ES
 
 #### ES Pass mix by mode w/ bunkers
-```{r ES Pass by mode w/ bunkers - Bar}
+```{r 06_energy_services/ES Pass by mode with bunkers - Bar}
 tot <- "ES|Transport|Pass"
 items <- c(
   "ES|Transport|Bunkers|Pass|International Aviation",
@@ -323,7 +323,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### ES Pass mix by mode w/ bunkers - per capita
-```{r ES Pass by mode w/ bunkers - Bar}
+```{r 06_energy_services/ES Pass by mode with bunkers - Bar}
 tot <- "ES|Transport|Pass pCap"
 items <- c(
   "ES|Transport|Bunkers|Pass|International Aviation pCap",
@@ -340,12 +340,12 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### ES Pass share mix by mode w/ bunkers - Bar 
-```{r ES Pass share mix by mode w/ bunkers - Bar }
+```{r 06_energy_services/ES Pass share mix by mode with bunkers - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### ES Pass mix by mode w/o bunkers - Bar
-```{r ES Pass by mode w/o bunkers - Bar}
+```{r 06_energy_services/ES Pass by mode without bunkers - Bar}
 tot <- "ES|Transport|Pass|Short-Medium distance"
 items <- c(
   "ES|Transport|Pass|Domestic Aviation",
@@ -361,12 +361,12 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### ES Pass share mix by mode w/o bunkers 
-```{r ES Pass share mix by mode w/o bunkers }
+```{r 06_energy_services/ES Pass share mix by mode without bunkers}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### ES Pass Modes - Line
-```{r ES Pass Modes - Line}
+```{r 06_energy_services/ES Pass Modes - Line}
 showLinePlots(data, "ES|Transport|Pass")
 showLinePlots(data, "ES|Transport|Pass|Short-Medium distance")
 showLinePlots(data, "ES|Transport|Pass|Road|LDV")
@@ -383,7 +383,7 @@ showLinePlots(data, "ES|Transport|Pass|Non-motorized|Walk")
 ```
 
 #### ES Pass LDV by tech - Bar
-```{r ES Pass LDV by tech - Bar}
+```{r 06_energy_services/ES Pass LDV by tech - Bar}
 tot <- "ES|Transport|Pass|Road|LDV"
 items <- c(
   "ES|Transport|Pass|Road|LDV|BEV",
@@ -395,7 +395,7 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### ES Freight with shipping by mode - Bar
-```{r ES Freight by mode - Bar}
+```{r 06_energy_services/ES Freight by mode - Bar}
 tot <- "ES|Transport|Freight"
 items <- c(
   "ES|Transport|Freight|Road",
@@ -407,12 +407,12 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### ES Freight with shipping by mode - mode share - Bar 
-```{r ES Freight with shipping by mode - mode share - Bar }
+```{r 06_energy_services/ES Freight with shipping by mode - mode share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### ES Freight w/o shipping by mode - Bar
-```{r ES Freight w/o shipping by mode - Bar}
+```{r 06_energy_services/ES Freight without shipping by mode - Bar}
 items <- c(
   "ES|Transport|Freight|Domestic Shipping",
   "ES|Transport|Freight|Rail",
@@ -422,12 +422,12 @@ showAreaAndBarPlots(data, items, orderVars = "user", scales = "fixed")
 ```
 
 #### ES Freight w/o shipping by mode - mode share - Bar 
-```{r ES Freight w/o shipping by mode - mode share - Bar }
+```{r 06_energy_services/ES Freight without shipping by mode - mode share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### ES Freight Modes - Line
-```{r ES Freight Modes - Line}
+```{r 06_energy_services/ES Freight Modes - Line}
 showLinePlots(data, "ES|Transport|Freight with bunkers")
 showLinePlots(data, "ES|Transport|Freight|Short-Medium distance")
 showLinePlots(data, "ES|Transport|Freight|Road")
@@ -437,7 +437,7 @@ showLinePlots(data, "ES|Transport|Bunkers|Freight|International Shipping")
 ```
 
 #### ES Freight Road by tech - Bar
-```{r ES Freight Road by tech - Bar}
+```{r 06_energy_services/ES Freight Road by tech - Bar}
 tot <- "ES|Transport|Freight|Road"
 items <- c(
   "ES|Transport|Freight|Road|BEV",
@@ -450,17 +450,17 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ### Stocks and Sales
 
 #### LDV Stock - line
-```{r LDV Stock - line}
+```{r 06_energy_services/LDV Stock - line}
 showLinePlots(data, "Stock|Transport|Pass|Road|LDV")
 ```
 
 #### LDV 4wheeler (Car) Stock - line
-```{r LDV 4wheeler (car) Stock - line}
+```{r 06_energy_services/LDV 4wheeler (car) Stock - line}
 showLinePlots(data, "Stock|Transport|Pass|Road|LDV|Four Wheelers")
 ```
 
 #### LDV Stock by tech - Bar
-```{r LDV Stock by tech - Bar}
+```{r 06_energy_services/LDV Stock by tech - Bar}
 tot <- "Stock|Transport|Pass|Road|LDV"
 items <- c(
   "Stock|Transport|Pass|Road|LDV|BEV",
@@ -473,12 +473,12 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### LDV Stock by tech - carrier share - Bar 
-```{r LDV Stock by tech - carrier share - Bar }
+```{r 06_energy_services/LDV Stock by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### LDV 4Wheelers (Car) Stock by tech - Bar
-```{r LDV 4Wheelers (Car) Stock by tech - Bar}
+```{r 06_energy_services/LDV 4Wheelers (Car) Stock by tech - Bar}
 tot <- "Stock|Transport|Pass|Road|LDV"
 items <- c(
   "Stock|Transport|Pass|Road|LDV|BEV",
@@ -491,12 +491,12 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### LDV 4Wheelers (Car) Stock by tech - carrier share - Bar 
-```{r LDV 4Wheelers (Car) Stock by tech - carrier share - Bar }
+```{r 06_energy_services/LDV 4Wheelers (Car) Stock by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### LDV Sales by tech - Bar
-```{r LDV Sales by tech - Bar}
+```{r 06_energy_services/LDV Sales by tech - Bar}
 tot <- "Sales|Transport|Pass|Road|LDV"
 items <- c(
   "Sales|Transport|Pass|Road|LDV|BEV",
@@ -510,12 +510,12 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### LDV Sales by tech - carrier share - Bar 
-```{r LDV Sales by tech - carrier share - Bar  }
+```{r 06_energy_services/LDV Sales by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### LDV 4Wheelers (Car) Sales by tech - Bar
-```{r LDV 4Wheelers (Car) by tech - Bar}
+```{r 06_energy_services/LDV 4Wheelers (Car) by tech - Bar}
 tot <- "Sales|Transport|Pass|Road|LDV|Four Wheelers"
 items <- c(
   "Sales|Transport|Pass|Road|LDV|Four Wheelers|BEV",
@@ -529,17 +529,17 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### LDV 4Wheelers (Car) Sales by tech - carrier share - Bar 
-```{r LDV 4Wheelers (Car) Sales by tech - carrier share - Bar  }
+```{r 06_energy_services/LDV 4Wheelers (Car) Sales by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### Truck Stock - line
-```{r Truck Stock - line}
+```{r 06_energy_services/Truck Stock - line}
 showLinePlots(data, "Stock|Transport|Freight|Road")
 ```
 
 #### Truck Stock by tech - Bar
-```{r Truck Stock by tech - Bar}
+```{r 06_energy_services/Truck Stock by tech - Bar}
 tot <- "Stock|Transport|Freight|Road"
 items <- c(
   "Stock|Transport|Freight|Road|BEV",
@@ -551,17 +551,17 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### Truck Stock by tech - carrier share - Bar 
-```{r Truck Stock by tech - carrier share - Bar }
+```{r 06_energy_services/Truck Stock by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### Truck Sales - line
-```{r Truck Sales - line}
+```{r 06_energy_services/Truck Sales - line}
 showLinePlots(data, "Sales|Transport|Freight|Road")
 ```
 
 #### Truck Sales by tech - Bar
-```{r Truck Sales by tech - Bar}
+```{r 06_energy_services/Truck Sales by tech - Bar}
 tot <- "Sales|Transport|Freight|Road"
 items <- c(
   "Sales|Transport|Freight|Road|BEV",
@@ -573,17 +573,17 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### Truck Sales by tech - carrier share - Bar 
-```{r Truck Sales by tech - carrier share - Bar }
+```{r 06_energy_services/Truck Sales by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### Bus Stocks - line
-```{r Bus Stock - line}
+```{r 06_energy_services/Bus Stock - line}
 showLinePlots(data, "Stock|Transport|Pass|Road|Bus")
 ```
 
 #### Bus Stock by tech - Bar
-```{r Bus Stock by tech - Bar}
+```{r 06_energy_services/Bus Stock by tech - Bar}
 tot <- "Stock|Transport|Pass|Road|Bus"
 items <- c(
   "Stock|Transport|Pass|Road|Bus|BEV",
@@ -594,17 +594,17 @@ items <- c(
 showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 #### Bus Stock by tech - carrier share - Bar 
-```{r Bus Stock by tech - carrier share - Bar  }
+```{r 06_energy_services/Bus Stock by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 #### Bus Sales - line
-```{r Bus Sales - line}
+```{r 06_energy_services/Bus Sales - line}
 showLinePlots(data, "Sales|Transport|Pass|Road|Bus")
 ```
 
 #### Bus Sales by tech - Bar
-```{r Bus Sales by tech - Bar}
+```{r 06_energy_services/Bus Sales by tech - Bar}
 tot <- "Sales|Transport|Pass|Road|Bus"
 items <- c(
   "Sales|Transport|Pass|Road|Bus|BEV",
@@ -616,13 +616,13 @@ showAreaAndBarPlots(data, items, tot, orderVars = "user", scales = "fixed")
 ```
 
 #### Bus Sales by tech - carrier share - Bar 
-```{r Bus Sales by tech - carrier share - Bar  }
+```{r 06_energy_services/Bus Sales by tech - carrier share - Bar}
 showAreaAndBarPlots(data, items, tot, orderVars = "user", fill = TRUE)
 ```
 
 ## Industry Production
 ### Subsector Production
-```{r plot industry subsector production}
+```{r 06_energy_services/plot industry subsector production}
 showLinePlots(data, "Production|Industry|Cement")
 showLinePlots(data, "Value Added|Industry|Chemicals")
 showLinePlots(data, "Production|Industry|Steel")
@@ -632,7 +632,7 @@ showLinePlots(data, "Value Added|Industry|Other Industry")
 ```
 
 ### Steel Production Mix
-```{r plot steel production mix, results = 'asis'}
+```{r 06_energy_services/plot steel production mix, results = 'asis'}
 items <- c("Production|Industry|Steel|Primary",
            "Production|Industry|Steel|Secondary")
 
@@ -720,7 +720,7 @@ cat("\n\n")
 ```
 
 ### Steel mix by route using process-based steel modeling
-```{r Steel mix by route}
+```{r 06_energy_services/Steel mix by route}
 if ("Production|Industry|Steel|BF-BOF" %in% levels(data$variable)) { # if process-based steel is used
   tot <- "Production|Industry|Steel"
   items <- c(
@@ -745,7 +745,7 @@ showAreaAndBarPlots(droute, items, tot, orderVars = "user", scales = "fixed")
 
 
 ### Steel accumulation
-```{r plot steel accumulation}
+```{r 06_energy_services/plot steel accumulation}
 stockT0 <- filter(data, period == 2005, model == "Mueller", variable == "Steel stock") %>% select("region", "value")
 
 population <- filter(data, period >= 2005, model == "REMIND", variable == "Population") %>%
@@ -778,7 +778,7 @@ showLinePlots(stockPc, "Production|Industry|Steel|Accumulated Production", scale
 ```
 
 ### Subsector per-GDP Production
-```{r plot subsector per-GDP production}
+```{r 06_energy_services/plot subsector per-GDP production}
 items <- c("Production|Industry|Cement|per-GDP",
            "Value Added|Industry|Chemicals|per-GDP",
            "Production|Industry|Steel|per-GDP",

@@ -99,7 +99,7 @@ When running `compareScenarios` via output script in REMIND, you are asked to pi
 
 ## Existing profiles
 
-A cs2-profile is a set of arguments for `piamPlotComparison::compareScenarios()`. There are different profiles for a comparison on the 12 main REMIND regions (`H12`, `H12-short`), or on the European regions (`EU27`, `EU27-short`) for 21-region-runs. The suffix `-short` indicates that only periods up to 2050 are considered. The `default`-profiles just call `compareScenarios()` with the default arguments as described in `?piamPlotComparison::compareScenarios`.
+A cs2-profile is a set of arguments for `piamPlotComparison::compareScenarios()`. There are different profiles for a comparison on the 12 main REMIND regions (`H12`, `H12-to2050`), or on the European regions (`EU27`, `EU27-to2050`) for 21-region-runs. The suffix `-to2050` indicates that only periods up to 2050 are considered. The `default`-profiles just call `compareScenarios()` with the default arguments as described in `?piamPlotComparison::compareScenarios`.
 
 The available profiles are stored in [`remind/scripts/cs2/profiles.json`](https://github.com/remindmodel/remind/blob/develop/scripts/cs2/profiles.json). Take a look at this file (open in text editor) to see the definition of each profile.
 

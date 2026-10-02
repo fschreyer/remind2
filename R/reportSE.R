@@ -261,7 +261,6 @@ reportSE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
     get_prodSE("pegas", "seh2", te = teNoCCS,  name = "SE|Hydrogen|Gas|+|w/o CC (EJ/yr)"),
     get_prodSE("seel", "seh2",                 name = "SE|Hydrogen|+|Electricity (EJ/yr)"),
     get_prodSE("seel", "seh2", te = "elh2",    name = "SE|Hydrogen|Electricity|+|Standard Electrolysis (EJ/yr)"),
-    get_prodSE("seel", "seh2", te = "elh2VRE", name = "SE|Hydrogen|Electricity|+|VRE Storage Electrolysis (EJ/yr)"),
     get_prodSE(peFos, "seh2",                  name = "SE|Hydrogen|Fossil (EJ/yr)"),
     get_prodSE(peFos, "seh2", te = teCCS,      name = "SE|Hydrogen|Fossil|+|w/ CC (EJ/yr)"),
     get_prodSE(peFos, "seh2", te = teNoCCS,    name = "SE|Hydrogen|Fossil|+|w/o CC (EJ/yr)")
@@ -474,8 +473,6 @@ reportSE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
       "SE|Input|Electricity|Hydrogen (EJ/yr)"),
     setNames(dimSums(mselect(vm_demSe, all_enty = "seel", all_enty1 = "seh2", all_te = "elh2"), dim = 3),
       "SE|Input|Electricity|Hydrogen|+|Standard Electrolysis (EJ/yr)"),
-    setNames(dimSums(mselect(vm_demSe, all_enty = "seel", all_enty1 = "seh2", all_te = "elh2VRE"), dim = 3),
-      "SE|Input|Electricity|Hydrogen|+|VRE Storage (EJ/yr)"),
     setNames(dimSums(vm_demSe[,,"feels"] + vm_demSe[,,"feelt"], dim = 3) -
                dimSums(vm_prodFe[,,"feels"] + vm_prodFe[,,"feelt"], dim = 3),
              "SE|Input|Electricity|T&D losses (EJ/yr)"),

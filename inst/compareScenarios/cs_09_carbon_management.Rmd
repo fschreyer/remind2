@@ -2,17 +2,17 @@
 
 ## Carbon Capture
 ### Capture Total - Line
-```{r Capture Total - Line}
+```{r 09_carbon_management/Capture Total - Line}
 showLinePlots(data, "Carbon Management|Carbon Capture")
 ```
 
 ### Capture by sector - Bar
-```{r Capture by sector - Bar}
+```{r 09_carbon_management/Capture by sector - Bar}
 showAreaAndBarPlotsPlus(data, "Carbon Management|Carbon Capture", scales = "fixed")
 ```
 
 ### Capture by CO2 origin - Bar
-```{r Capture by CO2 origin - Bar}
+```{r 09_carbon_management/Capture by CO2 origin - Bar}
 showAreaAndBarPlots(
   data = data,
   vars = rev(c('Carbon Management|Carbon Capture|Biomass',
@@ -25,22 +25,22 @@ showAreaAndBarPlots(
 ```
 
 ### Bio PE2SE Capture by carrier - Bar
-```{r Bio PE2SE Capture by carrier - Bar}
+```{r 09_carbon_management/Bio PE2SE Capture by carrier - Bar}
 showAreaAndBarPlotsPlus(data, "Carbon Management|Carbon Capture|Energy|Pe2Se|Biomass", scales = "fixed")
 ```
 
 ### Fossil PE2SE Capture by carrier - Bar
-```{r Fossil PE2SE Capture by carrier - Bar}
+```{r 09_carbon_management/Fossil PE2SE Capture by carrier - Bar}
 showAreaAndBarPlotsPlus(data, "Carbon Management|Carbon Capture|Energy|Pe2Se|Fossil", scales = "fixed")
 ```
 
 ### Industry Energy Capture by PE - Bar
-```{r Industry Energy Capture by PE - Bar}
+```{r 09_carbon_management/Industry Energy Capture by PE - Bar}
 showAreaAndBarPlotsPlus(data, "Carbon Management|Carbon Capture|Energy|Industry", scales = "fixed")
 ```
 
 ### Carbon Capture from Industry Sector - Bar
-```{r Carbon Capture from Industry Sector - Bar}
+```{r 09_carbon_management/Carbon Capture from Industry Sector - Bar}
 showAreaAndBarPlots(
   data = data,
   vars = rev(c('Carbon Management|Carbon Capture|Energy|Industry|Cement',
@@ -52,7 +52,7 @@ showAreaAndBarPlots(
 ```
 
 ### Carbon Capture from CDR Sector - Bar
-```{r Carbon Capture from CDR Sector - Bar}
+```{r 09_carbon_management/Carbon Capture from CDR Sector - Bar}
 showAreaAndBarPlots(
   data = data,
   vars = rev(c('Carbon Management|Carbon Capture|Energy|CDR Sector',
@@ -64,12 +64,12 @@ showAreaAndBarPlots(
 
 ## Split Usage / Storage
 ### Share of Storage in Capture - Line
-```{r Share of Storage in Capture}
+```{r 09_carbon_management/Share of Storage in Capture}
 showLinePlots(data, "Carbon Management|Share of Stored CO2 from Captured CO2")
 ```
 
 ### Use of captured carbon - Bar
-```{r Use of captured carbon - Bar}
+```{r 09_carbon_management/Use of captured carbon - Bar}
 showAreaAndBarPlots(data, 
                     vars = c('Carbon Management|Storage',
                              'Carbon Management|Usage'),
@@ -78,27 +78,27 @@ showAreaAndBarPlots(data,
 
 ## Carbon Storage
 ### Storage Total - Line
-```{r Storage Total - Line}
+```{r 09_carbon_management/Storage Total - Line}
 showLinePlots(data, "Carbon Management|Storage")
 ```
 
 ### Storage by source type - Bar
-```{r Storage by source type - Bar}
+```{r 09_carbon_management/Storage by source type - Bar}
 showAreaAndBarPlotsPlus(data, "Carbon Management|Storage", scales = "fixed")
 ```
 
 ### Storage from Industry Energy by PE - Bar
-```{r Storage from Industry Energy by PE - Bar}
+```{r 09_carbon_management/Storage from Industry Energy by PE - Bar}
 showAreaAndBarPlotsPlus(data, "Carbon Management|Storage|Energy|Industry", scales = "fixed")
 ```
 
 ### Share of storage potential used
-```{r Share of storage potential used}
+```{r 09_carbon_management/Share of storage potential used}
 showLinePlots(data, "Carbon Management|Storage|Share of annual potential used")
 ```
 
 ### Maximum annual storage
-```{r Maximum annual storage}
+```{r 09_carbon_management/Maximum annual storage}
 showAreaAndBarPlots(data,
                     vars = c("Carbon Management|Storage"),
                     tot = "Carbon Management|Storage|Maximum annual CO2 storage potential")
@@ -106,12 +106,12 @@ showAreaAndBarPlots(data,
 
 ## Carbon Usage
 ### Usage Total - Line
-```{r Usage Total - Line}
+```{r 09_carbon_management/Usage Total - Line}
 showLinePlots(data, "Carbon Management|Usage")
 ```
 
 ### Usage for carrier - Bar
-```{r Usage for carrier - Bar}
+```{r 09_carbon_management/Usage for carrier - Bar}
 showAreaAndBarPlotsPlus(data, "Carbon Management|Usage", scales = "fixed")
 ```
 
@@ -121,7 +121,7 @@ showAreaAndBarPlotsPlus(data, "Carbon Management|Usage", scales = "fixed")
 
 ## Total (carbonaceous) materials production
 
-```{r}
+```{r 09_carbon_management/Total carbonaceous materials production}
 showAreaAndBarPlots(data,
                         vars = c("Carbon Management|Materials|Plastics",
                                  "Carbon Management|Materials|Non-Plastics"),
@@ -131,12 +131,12 @@ showAreaAndBarPlots(data,
 
 
 ## Total plastics production
-```{r }
+```{r 09_carbon_management/Total plastics production}
 showLinePlots(data, "Carbon Management|Materials|Plastics")
 ```
 
 ## Plastics production by origin
-```{r }
+```{r 09_carbon_management/Plastics production by origin}
 showAreaAndBarPlots(data,
                         vars = c("Carbon Management|Materials|Plastics|Fossil",
                                  "Carbon Management|Materials|Plastics|Biomass",
@@ -145,7 +145,7 @@ showAreaAndBarPlots(data,
 ```
 
 ## Plastic waste by fate
-```{r }
+```{r 09_carbon_management/Plastic waste by fate}
 showAreaAndBarPlots(data,
                         vars = c("Carbon Management|Materials|Plastics|Waste|Incineration",
                                  "Carbon Management|Materials|Plastics|Waste|Other destination"),
@@ -153,7 +153,7 @@ showAreaAndBarPlots(data,
 ```
 
 ## Non-plastic waste by fate
-```{r }
+```{r 09_carbon_management/Non-plastic waste by fate}
 showAreaAndBarPlots(data,
                         vars = c("Carbon Management|Materials|Non-Plastics|Incineration",
                                  "Carbon Management|Materials|Non-Plastics|Other destination"),
@@ -162,7 +162,7 @@ showAreaAndBarPlots(data,
 
 ## Feedstock Carbon by SE carrier and fate
 
-```{r}
+```{r 09_carbon_management/Feedstock carbon by SE carrier and fate}
 showAreaAndBarPlots(data,
                     vars = c("Carbon Management|Feedstocks|Emitted|Fossil",
                              "Carbon Management|Feedstocks|Emitted|Biomass",
@@ -176,7 +176,7 @@ showAreaAndBarPlots(data,
 # CDR extras
 
 ## Biochar production
-```{r Biochar Plots}
+```{r 09_carbon_management/Biochar Plots}
 showLinePlots(data, "SE|Biochar [Mt]")
 showAreaAndBarPlots(
   data = data,
@@ -191,7 +191,7 @@ showAreaAndBarPlots(
 ```
 
 ## EW rock spreading
-```{r CO2 EW rock}
+```{r 09_carbon_management/CO2 EW rock}
 items <- c(
   "CDR|Rocks spread",
   "CDR|Rocks weathering"

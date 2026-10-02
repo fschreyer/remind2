@@ -4,7 +4,7 @@
 
 ### Buildings
 
-```{r CES Prices Buildings}
+```{r 11_ces_function/CES Prices Buildings}
 
 showLinePlots(data, "Internal|CES Function|CES Price|fegab")
 showLinePlots(data, "Internal|CES Function|CES Price|feh2b")
@@ -25,14 +25,14 @@ showLinePlots(data, "Internal|CES Function|CES Price|enb")
 
 #### Total Industry
 
-```{r CES Prices Total Industry}
+```{r 11_ces_function/CES Prices Total Industry}
 showLinePlots(data, "Internal|CES Function|CES Price|ue_industry")
 ```
 
 
 #### Steel
 
-```{r CES Prices Steel}
+```{r 11_ces_function/CES Prices Steel}
 
 showLinePlots(data, "Internal|CES Function|CES Price|feso_steel")
 showLinePlots(data, "Internal|CES Function|CES Price|feli_steel")
@@ -50,7 +50,7 @@ showLinePlots(data, "Internal|CES Function|CES Price|ue_steel_secondary")
 
 #### Cement
 
-```{r CES Prices Cement}
+```{r 11_ces_function/CES Prices Cement}
 
 showLinePlots(data, "Internal|CES Function|CES Price|feso_cement")
 showLinePlots(data, "Internal|CES Function|CES Price|feli_cement")
@@ -65,7 +65,7 @@ showLinePlots(data, "Internal|CES Function|CES Price|ue_cement")
 
 #### Chemicals
 
-```{r CES Prices Chemicals}
+```{r 11_ces_function/CES Prices Chemicals}
 
 showLinePlots(data, "Internal|CES Function|CES Price|feso_chemicals")
 showLinePlots(data, "Internal|CES Function|CES Price|feli_chemicals")
@@ -81,7 +81,7 @@ showLinePlots(data, "Internal|CES Function|CES Price|ue_chemicals")
 
 #### Other Industry
 
-```{r CES Prices Other Industry}
+```{r 11_ces_function/CES Prices Other Industry}
 
 showLinePlots(data, "Internal|CES Function|CES Price|feso_otherInd")
 showLinePlots(data, "Internal|CES Function|CES Price|feli_otherInd")
@@ -100,7 +100,7 @@ showLinePlots(data, "Internal|CES Function|CES Price|ue_otherInd")
 
 ### Buildings
 
-```{r MRS Buildings}
+```{r 11_ces_function/MRS Buildings}
 showLinePlots(data, "Internal|CES Function|MRS|feelhpb|fegab")
 showLinePlots(data, "Internal|CES Function|MRS|feelhpb|fehob")
 showLinePlots(data, "Internal|CES Function|MRS|feelhpb|fesob")
@@ -115,7 +115,7 @@ showLinePlots(data, "Internal|CES Function|MRS|feh2b|fegab")
 
 #### Steel
 
-```{r MRS Steel}
+```{r 11_ces_function/MRS Steel}
 showLinePlots(data, "Internal|CES Function|MRS|feel_steel_secondary|feso_steel")
 showLinePlots(data, "Internal|CES Function|MRS|feh2_steel|feso_steel")
 ```
@@ -124,7 +124,7 @@ showLinePlots(data, "Internal|CES Function|MRS|feh2_steel|feso_steel")
 
 #### Cement
 
-```{r MRS Cement}
+```{r 11_ces_function/MRS Cement}
 showLinePlots(data, "Internal|CES Function|MRS|feh2_cement|fega_cement")
 showLinePlots(data, "Internal|CES Function|MRS|feh2_cement|feso_cement")
 ```
@@ -132,7 +132,7 @@ showLinePlots(data, "Internal|CES Function|MRS|feh2_cement|feso_cement")
 
 #### Chemicals
 
-```{r MRS Chemicals}
+```{r 11_ces_function/MRS Chemicals}
 showLinePlots(data, "Internal|CES Function|MRS|feelhth_chemicals|fega_chemicals")
 showLinePlots(data, "Internal|CES Function|MRS|feelhth_chemicals|feli_chemicals")
 showLinePlots(data, "Internal|CES Function|MRS|feh2_chemicals|fega_chemicals")
@@ -142,7 +142,7 @@ showLinePlots(data, "Internal|CES Function|MRS|feh2_chemicals|feli_chemicals")
 
 #### Other Industry
 
-```{r MRS Other Industry}
+```{r 11_ces_function/MRS Other Industry}
 showLinePlots(data, "Internal|CES Function|MRS|feelhth_otherInd|fega_otherInd")
 showLinePlots(data, "Internal|CES Function|MRS|feelhth_otherInd|feli_otherInd")
 showLinePlots(data, "Internal|CES Function|MRS|feelhth_otherInd|feso_otherInd")
@@ -160,7 +160,7 @@ showLinePlots(data, "Internal|CES Function|MRS|feh2_otherInd|feso_otherInd")
 ### Buildings
 
 
-```{r Buildings Value}
+```{r 11_ces_function/Buildings Value}
 
 showLinePlots(data, "Internal|CES Function|Value|enb")
 showLinePlots(data, "Internal|CES Function|Value|enhb")
@@ -172,7 +172,7 @@ showLinePlots(data, "Internal|CES Function|Value|feelscb")
 
 ### Industry
 
-```{r Industry Value}
+```{r 11_ces_function/Industry Value}
 
 showLinePlots(data, "Internal|CES Function|Value|ue_industry")
 showLinePlots(data, "Internal|CES Function|Value|ue_steel")
@@ -183,7 +183,7 @@ showLinePlots(data, "Internal|CES Function|Value|ue_otherInd")
 
 ### Transport
 
-```{r Transport Value}
+```{r 11_ces_function/Transport Value}
 
 showLinePlots(data, "Internal|CES Function|Value|entrp")
 
