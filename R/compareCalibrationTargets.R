@@ -29,6 +29,7 @@ compareCalibrationTargets <- function(gdxPaths, outputDir = getwd(),
     system.file("markdown/compareCalibrationTargets.Rmd", package = "remind2"),
     output_dir = outputDir,
     output_file = outputFile,
+    intermediates_dir = outputDir,
     output_format = "html_document",
     params = yamlParams
   )

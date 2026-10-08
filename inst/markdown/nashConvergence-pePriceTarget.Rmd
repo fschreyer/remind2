@@ -31,7 +31,7 @@ params:
 
 library(dplyr)
 library(ggplot2)
-library(gdx)
+library(gdx2)
 library(mip)
 library(plotly)
 library(remind2)
@@ -66,7 +66,7 @@ buildLabel <- function(df) {
 }
 
 # tolerance hardcoded to 0.05 (5%) in regiCarbonPrice/postsolve.gms.
-tol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_implicitPePriceTarget_tolerance", react = "silent")))
+tol <- suppressWarnings(as.numeric(gdx2::readGDX(params$gdx, "cm_implicitPePriceTarget_tolerance", react = "silent")))
 if (length(tol) == 0 || is.na(tol)) tol <- 0.05
 
 dev <- getPlotDataSafe("p47_implicitPePrice_dev_iter", params$gdx)
@@ -76,8 +76,8 @@ if (nrow(dev) > 0) {
   dev <- dev %>%
     rename("value" = "p47_implicitPePrice_dev_iter") %>%
     mutate(
-      "iteration" := as.numeric(as.character(.data$iteration)),
-      "ttot" := as.numeric(as.character(.data$ttot))
+      "iteration" = as.numeric(as.character(.data$iteration)),
+      "ttot" = as.numeric(as.character(.data$ttot))
     )
   dev$label <- buildLabel(dev)
 }

@@ -17,8 +17,6 @@
 #' exoGAINS2025AirPollutants(remind_output, gains_emifacs, baseyear_emis_2020)
 #' }
 #' @export
-#' @importFrom gdx readGDX
-
 
 exoGAINS2025AirPollutants <- function(remind_output, gains_emifacs, baseyear_emis_2020,
                                       t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150),
@@ -68,8 +66,8 @@ exoGAINS2025AirPollutants <- function(remind_output, gains_emifacs, baseyear_emi
   # 2. Select GAINS data -------------------------------------------------------
 
   # Select GAINS data according to order in mapping and bring regions into same (alphabetically sorted) order as RA
-  emifacs <- gains_emifacs[getRegions(RA), , map_GAINS2REMIND$GAINSsector]
-  emis <- baseyear_emis_2020[getRegions(RA), , map_GAINS2REMIND$GAINSsector]
+  emifacs <- gains_emifacs[getItems(RA, dim = 1), , map_GAINS2REMIND$GAINSsector]
+  emis <- baseyear_emis_2020[getItems(RA, dim = 1), , map_GAINS2REMIND$GAINSsector]
 
   # Rename REMIND activities to GAINS sectors to make them compatible for calculation
   # IMPORTANT: before renaming, order of REMIND sectors must be identical to order of GAINS sectors, otherwise data would be mixed up
@@ -124,7 +122,7 @@ exoGAINS2025AirPollutants <- function(remind_output, gains_emifacs, baseyear_emi
         missing_combinations <- which(is.na(emis_projected[, 2020, species][, , sector]) & (emis[, 2020, species][, , sector] > 0))
         if (length(missing_combinations) > 0) {
           cat(paste0("Region(s) with missing projected emissions for species ", species, " and sector ", sector, ":"))
-          cat(paste0(getRegions(emis_projected)[missing_combinations]))
+          cat(paste0(getItems(emis_projected, dim = 1)[missing_combinations]))
           cat("\n")
         }
       }

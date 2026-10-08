@@ -25,29 +25,29 @@ reportInvestments <- function(gdx,
                               t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150),
                               gdx_ref = NULL) {
   # Load in investment variables
-  vm_invMacro <- gdx::readGDX(gdx, "vm_invMacro", field = "l")
-  v01_invMacroAdj <- gdx::readGDX(gdx, "v01_invMacroAdj", field = "l")
-  v_costInv <- gdx::readGDX(gdx, "v_costInv", field = "l")
-  vm_costInvTeDir <- gdx::readGDX(gdx, "vm_costInvTeDir", field = "l")
-  vm_costInvTeAdj <- gdx::readGDX(gdx, "vm_costInvTeAdj", field = "l")
-  vm_costAddTeInv <- gdx::readGDX(gdx, "vm_costAddTeInv", field = "l")
-  vm_costCESMkup <- gdx::readGDX(gdx, "vm_costCESMkup", field = "l")
+  vm_invMacro <- gdx2::readGDX(gdx, "vm_invMacro", select = list("_field" = "level"))
+  v01_invMacroAdj <- gdx2::readGDX(gdx, "v01_invMacroAdj", select = list("_field" = "level"))
+  v_costInv <- gdx2::readGDX(gdx, "v_costInv", select = list("_field" = "level"))
+  vm_costInvTeDir <- gdx2::readGDX(gdx, "vm_costInvTeDir", select = list("_field" = "level"))
+  vm_costInvTeAdj <- gdx2::readGDX(gdx, "vm_costInvTeAdj", select = list("_field" = "level"))
+  vm_costAddTeInv <- gdx2::readGDX(gdx, "vm_costAddTeInv", select = list("_field" = "level"), restoreZeros = FALSE)
+  vm_costCESMkup <- gdx2::readGDX(gdx, "vm_costCESMkup", select = list("_field" = "level"))
 
   # Apply 'modifyInvestmentVariables' to shift from the model-internal time coverage (deltacap and investment
   # variables for step t represent the average of the years from t-4years to t) to the general convention for
   # the reporting template (all variables represent the average of the years from t-2.5years to t+2.5years).
   # This function requires the variable to be defined over ttot.
-  ttot <- gdx::readGDX(gdx, "ttot") |> as.numeric()
-  cm_startyear <- gdx::readGDX(gdx, "cm_startyear") |> as.integer()
+  ttot <- gdx2::readGDX(gdx, "ttot") |> as.numeric()
+  cm_startyear <- gdx2::readGDX(gdx, "cm_startyear") |> as.integer()
 
   if (!is.null(gdx_ref)) {
-    vm_invMacro_ref <- gdx::readGDX(gdx_ref, "vm_invMacro", field = "l")[, ttot, ]
-    v01_invMacroAdj_ref <- gdx::readGDX(gdx_ref, "v01_invMacroAdj", field = "l")[, ttot, ]
-    v_costInv_ref <- gdx::readGDX(gdx_ref, "v_costInv", field = "l")[, ttot, ]
-    vm_costInvTeDir_ref <- gdx::readGDX(gdx_ref, "vm_costInvTeDir", field = "l")[, ttot, ]
-    vm_costInvTeAdj_ref <- gdx::readGDX(gdx_ref, "vm_costInvTeAdj", field = "l")[, ttot, ]
-    vm_costAddTeInv_ref <- gdx::readGDX(gdx_ref, "vm_costAddTeInv", field = "l")[, ttot, ]
-    vm_costCESMkup_ref <- gdx::readGDX(gdx_ref, "vm_costCESMkup", field = "l")[, ttot, ]
+    vm_invMacro_ref <- gdx2::readGDX(gdx_ref, "vm_invMacro", select = list("_field" = "level"))[, ttot, ]
+    v01_invMacroAdj_ref <- gdx2::readGDX(gdx_ref, "v01_invMacroAdj", select = list("_field" = "level"))[, ttot, ]
+    v_costInv_ref <- gdx2::readGDX(gdx_ref, "v_costInv", select = list("_field" = "level"))[, ttot, ]
+    vm_costInvTeDir_ref <- gdx2::readGDX(gdx_ref, "vm_costInvTeDir", select = list("_field" = "level"))[, ttot, ]
+    vm_costInvTeAdj_ref <- gdx2::readGDX(gdx_ref, "vm_costInvTeAdj", select = list("_field" = "level"))[, ttot, ]
+    vm_costAddTeInv_ref <- gdx2::readGDX(gdx_ref, "vm_costAddTeInv", select = list("_field" = "level"), restoreZeros = FALSE)
+    vm_costCESMkup_ref <- gdx2::readGDX(gdx_ref, "vm_costCESMkup", select = list("_field" = "level"))[, ttot, ]
   } else {
     vm_invMacro_ref <- NULL
     v01_invMacroAdj_ref <- NULL
@@ -73,7 +73,7 @@ reportInvestments <- function(gdx,
   vm_costInvTeAdj <- modifyInvestmentVariables(vm_costInvTeAdj[, ttot, ],
                                                ref = vm_costInvTeAdj_ref,
                                                startYear = cm_startyear)
-  vm_costAddTeInv <- modifyInvestmentVariables(vm_costAddTeInv[, ttot, ],
+  vm_costAddTeInv <- modifyInvestmentVariables(vm_costAddTeInv,
                                                ref = vm_costAddTeInv_ref,
                                                startYear = cm_startyear)
   vm_costCESMkup <- modifyInvestmentVariables(vm_costCESMkup[, ttot, ],
@@ -81,23 +81,24 @@ reportInvestments <- function(gdx,
                                               startYear = cm_startyear)
 
   # Load in sets used to filter the investment variables
-  ppfKap <- gdx::readGDX(gdx, "ppfKap") |> as.character()
-  en2en <- gdx::readGDX(gdx, "en2en") |> dplyr::rename("en_in" = "all_enty", "en_out" = "all_enty1", "te" = "all_te")
-  teStor <- gdx::readGDX(gdx, "teStor") |> as.character()
-  teGrid <- gdx::readGDX(gdx, "teGrid") |> as.character()
-  teNoTransform <- gdx::readGDX(gdx, "teNoTransform") |> as.character()
-  teCCS <- gdx::readGDX(gdx, "teCCS") |> as.character()
-  peFos <- gdx::readGDX(gdx, "peFos") |> as.character()
-  peBio <- gdx::readGDX(gdx, "peBio") |> as.character()
-  peRe <- gdx::readGDX(gdx, "peRe") |> as.character()
-  entyFe <- gdx::readGDX(gdx, "entyFe") |> as.character()
-  entyPe <- gdx::readGDX(gdx, "entyPe") |> as.character()
-  entySe <- gdx::readGDX(gdx, "entySe") |> as.character()
-  sector2te_addTDCost <- gdx::readGDX(gdx, "sector2te_addTDCost") |>
+  ppfKap <- gdx2::readGDX(gdx, "ppfKap") |> as.character()
+  en2en <- gdx2::readGDX(gdx, "en2en", uniqueStyle = "classic", stringsAsFactors = FALSE) |>
+    dplyr::rename("en_in" = "all_enty", "en_out" = "all_enty1", "te" = "all_te")
+  teStor <- gdx2::readGDX(gdx, "teStor") |> as.character()
+  teGrid <- gdx2::readGDX(gdx, "teGrid") |> as.character()
+  teNoTransform <- gdx2::readGDX(gdx, "teNoTransform") |> as.character()
+  teCCS <- gdx2::readGDX(gdx, "teCCS") |> as.character()
+  peFos <- gdx2::readGDX(gdx, "peFos") |> as.character()
+  peBio <- gdx2::readGDX(gdx, "peBio") |> as.character()
+  peRe <- gdx2::readGDX(gdx, "peRe") |> as.character()
+  entyFe <- gdx2::readGDX(gdx, "entyFe") |> as.character()
+  entyPe <- gdx2::readGDX(gdx, "entyPe") |> as.character()
+  entySe <- gdx2::readGDX(gdx, "entySe") |> as.character()
+  sector2te_addTDCost <- gdx2::readGDX(gdx, "sector2te_addTDCost", stringsAsFactors = FALSE) |>
     tidyr::unite("x", c("all_te", "emi_sectors"), sep = ".") |>
-    dplyr::pull()
-  ppfen_CESMkup <- gdx::readGDX(gdx, "ppfen_CESMkup") |> as.character()
-  tePrc <- gdx::readGDX(gdx, "tePrc") |> as.character()
+    dplyr::pull("x")
+  ppfen_CESMkup <- gdx2::readGDX(gdx, "ppfen_CESMkup") |> as.character()
+  tePrc <- gdx2::readGDX(gdx, "tePrc") |> as.character()
 
 
   # Perform some helpful calculations, motivated by the fact that the GAMS variables do not align with what we want to
@@ -422,7 +423,7 @@ reportInvestments <- function(gdx,
   ## Split out the amount of "normal" grid, the additional grid/charger investments due to electric vehicles,
   ## and the additional grid investments needed for better pooling of VRE. For BEVs, the assumption is to only
   ## take the share of tdelt costs that are higher than the tdels costs
-  pm_data <- gdx::readGDX(gdx, "pm_data")[, , c("inco0.tdelt", "inco0.tdels")]
+  pm_data <- gdx2::readGDX(gdx, "pm_data")[, , c("inco0.tdelt", "inco0.tdels")]
   cr <- pm_data[, , "inco0.tdelt"] / pm_data[, , "inco0.tdels"]
   tmp <- mbind(tmp, setNames(
     dimSums(inv[, , "tdelt"]) * (cr - 1) / cr,
@@ -657,7 +658,7 @@ reportInvestments <- function(gdx,
 
   # Add other region aggregations
   if (!is.null(regionSubsetList)) {
-    tmp <- mbind(tmp, calc_regionSubset_sums(tmp, regionSubsetList))
+    tmp <- mbind(tmp, calcRegionSubsetSums(tmp, regionSubsetList))
   }
 
   getSets(tmp)[3] <- "variable"

@@ -16,9 +16,8 @@
 #' }
 #'
 #' @export
-#' @importFrom gdx readGDX
 #' @importFrom quitte as.quitte
-#' @importFrom dplyr %>% mutate
+#' @importFrom dplyr mutate
 
 convGDX2CSV_LCOE <- function(gdx, file = NULL, scen = "default",
                              t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150)) {
@@ -38,7 +37,8 @@ convGDX2CSV_LCOE <- function(gdx, file = NULL, scen = "default",
 
   # write the LCOE.mif or give back the magpie opject output
   if (!is.null(file)) {
-    write.table(df.LCOE.report, file = file, quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ";")
+    utils::write.table(df.LCOE.report, file = file, quote = FALSE,
+                       row.names = FALSE, col.names = TRUE, sep = ";")
   } else {
     return(output)
   }

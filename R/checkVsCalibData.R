@@ -18,14 +18,28 @@
 #' }
 #' @export
 checkVsCalibData <- function(gdx, outputDir = getwd(), outputFile = "Check_vs_CalibData.pdf") {
-
   yamlParams <- list(gdx = normalizePath(gdx, mustWork = TRUE))
 
+  tmpFolder <- file.path(outputDir, "checkVsCalibrationData")
+
+  dir.create(tmpFolder)
+
+  file.copy(
+    from = piamutils::getSystemFile("markdown", "checkVsCalibrationData.Rmd", package = "remind2"),
+    to = tmpFolder, recursive = TRUE, copy.mode = FALSE
+  )
+
+  # avoid potential problems with write permissions on the copied files
+  Sys.chmod(list.files(tmpFolder, full.names = TRUE))
+
   rmarkdown::render(
-    system.file("markdown", "checkVsCalibrationData.Rmd", package = "remind2"),
+    file.path(tmpFolder, "checkVsCalibrationData.Rmd"),
     output_dir = outputDir,
     output_file = outputFile,
+    intermediates_dir = tmpFolder,
     output_format = "pdf_document",
     params = yamlParams
   )
+
+  unlink(tmpFolder, recursive = TRUE)
 }

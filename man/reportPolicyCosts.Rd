@@ -13,9 +13,9 @@ reportPolicyCosts(
 )
 }
 \arguments{
-\item{gdx}{a GDX as created by readGDX, or the file name of a gdx}
+\item{gdx}{a GDX as created by gdx2::readGDX, or the file name of a gdx}
 
-\item{gdx_ref}{a reference GDX as created by readGDX, or the file name of a gdx}
+\item{gdx_ref}{a reference GDX as created by gdx2::readGDX, or the file name of a gdx}
 
 \item{regionSubsetList}{a list containing regions to create report variables region
 aggregations. If NULL (default value) only the global region aggregation "GLO" will
@@ -28,8 +28,9 @@ t=c(seq(2005,2060,5),seq(2070,2110,10),2130,2150)}
 Read in GDX and calculate policy costs functions
 }
 \examples{
-
-\dontrun{reportPolicyCosts(gdx)}
+\dontrun{
+reportPolicyCosts(gdx)
+}
 
 }
 \author{

@@ -31,7 +31,7 @@ params:
 
 library(dplyr)
 library(ggplot2)
-library(gdx)
+library(gdx2)
 library(mip)
 library(plotly)
 library(remind2)
@@ -69,17 +69,13 @@ getPlotDataSafe <- function(var, gdx) {
 
 # Tolerance: read cm_TaxConv_tolerance from the gdx (exported by nash); fall back to the
 # historical hardcoded value (0.1% of GDP) for older gdx files.
-tol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_TaxConv_tolerance", react = "silent")))
+tol <- suppressWarnings(as.numeric(gdx2::readGDX(params$gdx, "cm_TaxConv_tolerance", react = "silent")))
 if (length(tol) == 0 || is.na(tol)) tol <- 0.001
 
 df <- mip::getPlotData("p80_convNashTaxrev_iter", params$gdx)
 if (nrow(df) > 0) {
   df <- df %>%
-    rename("value" = "p80_convNashTaxrev_iter") %>%
-    mutate(
-      "iteration" := as.numeric(as.character(.data$iteration)),
-      "ttot" := as.numeric(as.character(.data$ttot))
-    )
+    rename("value" = "p80_convNashTaxrev_iter")
 }
 
 ```
@@ -240,8 +236,8 @@ metric. Components absent for this run's realisation are skipped (no error).
 ```{r components_read, echo=FALSE, include=FALSE}
 
 # GDP denominator (final-iteration level), to express components as a share of GDP
-gdpMag <- suppressWarnings(gdx::readGDX(params$gdx, "vm_cesIO", field = "l",
-                                        restore_zeros = FALSE, react = "silent"))
+gdpMag <- suppressWarnings(gdx2::readGDX(params$gdx, "vm_cesIO", select = list("_field" = "level"),
+                                        restoreZeros = FALSE, react = "silent"))
 
 # Tax revenue components read directly from the gdx (final-iteration levels, per the
 # vm_taxrev composition in modules/21_tax). Each is summed over any sub-index (dimSums
@@ -274,8 +270,8 @@ compDefs <- list(
 )
 
 readComp <- function(def) {
-  x <- suppressWarnings(gdx::readGDX(params$gdx, def$sym, field = "l",
-                                     restore_zeros = FALSE, react = "silent"))
+  x <- suppressWarnings(gdx2::readGDX(params$gdx, def$sym, select = list("_field" = "level"),
+                                     restoreZeros = FALSE, react = "silent"))
   if (is.null(x)) return(NULL)
   df <- tryCatch(quitte::as.quitte(x), error = function(e) NULL)
   if (is.null(df) || nrow(df) == 0) return(NULL)
@@ -301,7 +297,7 @@ if (!is.null(gdpMag) && !is.null(comp) && nrow(comp) > 0) {
     inner_join(gdp, by = c("region", "period")) %>%
     mutate(
       "share" = .data$value / .data$gdp,
-      "period" := as.numeric(as.character(.data$period))
+      "period" = as.numeric(as.character(.data$period))
     ) %>%
     filter(abs(.data$share) > 1e-9)
 }

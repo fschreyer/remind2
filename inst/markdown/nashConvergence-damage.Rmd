@@ -31,7 +31,7 @@ params:
 
 library(dplyr)
 library(ggplot2)
-library(gdx)
+library(gdx2)
 library(mip)
 library(plotly)
 library(remind2)
@@ -59,8 +59,8 @@ emptyPlot <- function(var, df = NULL) {
 
 booleanColor <- c("yes" = "#00BFC4", "no" = "#F8766D")
 
-sccTol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_sccConvergence", react = "silent")))
-tempTol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_tempConvergence", react = "silent")))
+sccTol <- suppressWarnings(as.numeric(gdx2::readGDX(params$gdx, "cm_sccConvergence", react = "silent")))
+tempTol <- suppressWarnings(as.numeric(gdx2::readGDX(params$gdx, "cm_tempConvergence", react = "silent")))
 if (length(sccTol) == 0) sccTol <- NA_real_
 if (length(tempTol) == 0) tempTol <- NA_real_
 
@@ -72,7 +72,6 @@ plotConvSeries <- function(var, tol, ylab) {
   df <- df %>%
     rename("value" = !!var) %>%
     mutate(
-      "iteration" := as.numeric(as.character(.data$iteration)),
       "converged" = if (is.na(tol)) "yes" else ifelse(.data$value > tol, "no", "yes"),
       "tooltip" = paste0("Iteration: ", .data$iteration,
                          "<br>", ylab, ": ", round(.data$value, 4),
@@ -117,10 +116,8 @@ gmt <- mip::getPlotData("p80_gmt_conv_iter", params$gdx)
 if (nrow(scc) == 0 || nrow(gmt) == 0) {
   cat("No damage-internalization convergence data in this gdx (module internalizeDamages is off in this run).")
 } else {
-  scc <- scc %>% rename("scc" = "p80_sccConvergenceMaxDeviation_iter") %>%
-    mutate("iteration" := as.numeric(as.character(.data$iteration)))
-  gmt <- gmt %>% rename("gmt" = "p80_gmt_conv_iter") %>%
-    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+  scc <- scc %>% rename("scc" = "p80_sccConvergenceMaxDeviation_iter")
+  gmt <- gmt %>% rename("gmt" = "p80_gmt_conv_iter")
 
   comb <- full_join(scc, gmt, by = "iteration") %>%
     arrange(.data$iteration) %>%
@@ -176,11 +173,9 @@ gmt <- mip::getPlotData("p80_gmt_conv_iter", params$gdx)
 if (nrow(scc) == 0 || nrow(gmt) == 0) {
   cat("no data")
 } else {
-  scc <- scc %>% rename("scc" = "p80_sccConvergenceMaxDeviation_iter") %>%
-    mutate("iteration" := as.numeric(as.character(.data$iteration)))
-  gmt <- gmt %>% rename("gmt" = "p80_gmt_conv_iter") %>%
-    mutate("iteration" := as.numeric(as.character(.data$iteration)))
-
+  scc <- scc %>% rename("scc" = "p80_sccConvergenceMaxDeviation_iter")
+  gmt <- gmt %>% rename("gmt" = "p80_gmt_conv_iter")
+  
   comb <- full_join(scc, gmt, by = "iteration") %>%
     arrange(.data$iteration) %>%
     mutate(

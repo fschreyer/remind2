@@ -23,33 +23,33 @@ reportMacroEconomy <- function(gdx,
                                regionSubsetList = NULL,
                                t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150)) {
   TWa_2_EJ <- 31.536
-  sm_DpGJ_2_TDpTWa <- gdx::readGDX(gdx, "sm_DpGJ_2_TDpTWa")
+  sm_DpGJ_2_TDpTWa <- gdx2::readGDX(gdx, "sm_DpGJ_2_TDpTWa")
 
   # Read in data from GDX
-  vm_cesIO <- gdx::readGDX(gdx, "vm_cesIO", field = "l")[, t, ]
-  pm_pvp <- gdx::readGDX(gdx, "pm_pvp")[, , "good"]
-  ppfen_ind <- gdx::readGDX(gdx, "ppfen_industry_dyn37", react = "silent")
-  ppfkap_ind <- gdx::readGDX(gdx, "ppfKap_industry_dyn37", react = "silent")
-  inputs <- gdx::readGDX(gdx, "in")
+  vm_cesIO <- gdx2::readGDX(gdx, "vm_cesIO", select = list("_field" = "level"))[, t, ]
+  pm_pvp <- gdx2::readGDX(gdx, "pm_pvp")[, , "good"]
+  ppfen_ind <- gdx2::readGDX(gdx, "ppfen_industry_dyn37", react = "silent")
+  ppfkap_ind <- gdx2::readGDX(gdx, "ppfKap_industry_dyn37", react = "silent")
+  inputs <- gdx2::readGDX(gdx, "in")
 
 
-  steel_process_based <- "steel" %in% gdx::readGDX(gdx, "secInd37Prc", react = "silent")
+  steel_process_based <- "steel" %in% gdx2::readGDX(gdx, "secInd37Prc", react = "silent")
   cons <- setNames(
-    gdx::readGDX(gdx, name = "vm_cons", field = "l", format = "first_found")[, t, ] * 1000,
+    gdx2::readGDX(gdx, name = "vm_cons", select = list("_field" = "level"))[, t, ] * 1000,
     "Consumption (billion US$2017/yr)"
   )
   gdp <- setNames(vm_cesIO[, , "inco"] * 1000, "GDP|MER (billion US$2017/yr)")
-  shPPPMER <- gdx::readGDX(gdx, c("pm_shPPPMER", "p_ratio_ppp"), format = "first_found")
+  shPPPMER <- gdx2::readGDX(gdx, c("pm_shPPPMER", "p_ratio_ppp"), format = "first_found")
   gdp_ppp <- setNames(gdp / shPPPMER, "GDP|PPP (billion US$2017/yr)")
   pop <- setNames(
-    gdx::readGDX(gdx, name = c("pm_pop", "pm_datapop"), format = "first_found")[, t, ] * 1000,
+    gdx2::readGDX(gdx, name = c("pm_pop", "pm_datapop"), format = "first_found")[, t, ] * 1000,
     "Population (million)"
   )
 
 
   damageFactor <- setNames(
-    gdx::readGDX(gdx,
-      name = c("vm_damageFactor", "vm_damage"), field = "l",
+    gdx2::readGDX(gdx,
+      name = c("vm_damageFactor", "vm_damage"), select = list("_field" = "level"),
       format = "first_found"
     ),
     "Damage factor (1)"
@@ -62,19 +62,19 @@ reportMacroEconomy <- function(gdx,
   gdp_ppp_net <- setNames(gdp_ppp[, tintersect, ] * damageFactor[, tintersect, ],
                           "GDP|PPP|Net_afterDamages (billion US$2017/yr)")
 
-  ies <- gdx::readGDX(gdx, c("pm_ies", "p_ies"), format = "first_found")
-  c_damage <- gdx::readGDX(gdx, "cm_damage", "c_damage", format = "first_found", react = "silent")
+  ies <- gdx2::readGDX(gdx, c("pm_ies", "p_ies"), format = "first_found")
+  c_damage <- gdx2::readGDX(gdx, c("cm_damage", "c_damage"), format = "first_found", react = "silent")
   if (is.null(c_damage)) c_damage <- 0
-  forcOs <- gdx::readGDX(gdx, "vm_forcOs", field = "l", react = "silent")[, t, ]
+  forcOs <- gdx2::readGDX(gdx, "vm_forcOs", select = list("_field" = "level"), react = "silent")[, t, ]
   if (is.null(forcOs)) forcOs <- 0
 
   # CES derivatives aka CES prices, marginal products
-  o01_CESderivatives <- gdx::readGDX(gdx, "o01_CESderivatives", restore_zeros = FALSE, react = "silent")
+  o01_CESderivatives <- gdx2::readGDX(gdx, "o01_CESderivatives", restoreZeros = FALSE, react = "silent", uniqueStyle = "classic")
   # marginal rate of substitution (ratio of CES prices)
-  o01_CESmrs <- gdx::readGDX(gdx, "o01_CESmrs", restore_zeros = FALSE, react = "silent")
+  o01_CESmrs <- gdx2::readGDX(gdx, "o01_CESmrs", restoreZeros = FALSE, react = "silent")
 
   # add NAs in first years from 2005 for o01_CESderivatives and o01_CESmrs
-  o01_CESderivatives_w0 <- new.magpie(getItems(o01_CESderivatives, dim = 1), t, getNames(o01_CESderivatives), 
+  o01_CESderivatives_w0 <- new.magpie(getItems(o01_CESderivatives, dim = 1), t, getNames(o01_CESderivatives),
                                       fill = NA)
   o01_CESmrs_w0 <- new.magpie(getItems(o01_CESmrs, dim = 1), t, getNames(o01_CESmrs), fill = NA)
 
@@ -114,8 +114,8 @@ reportMacroEconomy <- function(gdx,
 
   cap <- setNames(vm_cesIO[, , "kap"] * 1000, "Capital Stock|Non-ESM (billion US$2017)")
 
-  vm_welfare <- gdx::readGDX(gdx, c("v02_welfare", "v_welfare", "vm_welfare"),
-    field = "l", format = "first_found",
+  vm_welfare <- gdx2::readGDX(gdx, c("v02_welfare", "v_welfare", "vm_welfare"),
+                              select = list("_field" = "level"), format = "first_found",
     react = "warning"
   )
   if (!is.null(vm_welfare)) {
@@ -306,7 +306,7 @@ reportMacroEconomy <- function(gdx,
   out <- mbind(out, mbind(damageFactor[, tintersect, ], glo_damageFactor))
   # add other region aggregations
   if (!is.null(regionSubsetList)) {
-    out <- mbind(out, calc_regionSubset_sums(out, regionSubsetList))
+    out <- mbind(out, calcRegionSubsetSums(out, regionSubsetList))
   }
 
   # remove regional aggregations for CES Prices and CES MRS

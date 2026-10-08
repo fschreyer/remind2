@@ -70,9 +70,9 @@ reportExtraEmissions <- function(mif, extraData, gdx) {
 
 
   if (!is.null(regionSubsetList)) {
-    cedsceds <- mbind(cedsceds, calc_regionSubset_sums(cedsceds, regionSubsetList))
-    cedsiamc <- mbind(cedsiamc, calc_regionSubset_sums(cedsiamc, regionSubsetList))
-    cedsairpoll <- mbind(cedsairpoll, calc_regionSubset_sums(cedsairpoll, regionSubsetList))
+    cedsceds <- mbind(cedsceds, calcRegionSubsetSums(cedsceds, regionSubsetList))
+    cedsiamc <- mbind(cedsiamc, calcRegionSubsetSums(cedsiamc, regionSubsetList))
+    cedsairpoll <- mbind(cedsairpoll, calcRegionSubsetSums(cedsairpoll, regionSubsetList))
   }
 
   # check if regional resolution matches

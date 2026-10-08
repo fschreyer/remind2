@@ -4,4 +4,7 @@
 #'
 #' @name remind2-package
 #' @aliases remind2-package remind2
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data sym syms !! !!!
+#' @docType package
 "_PACKAGE"

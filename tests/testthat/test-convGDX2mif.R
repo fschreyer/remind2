@@ -1,23 +1,17 @@
 # uncomment to skip test
 # skip("Skip GDX test")
 
-# Check REMIND output. dt is a data.table in *wide* format,
-# i.e., variables are columns. `eqs` is a list of equations of the form
-# list(LHS = "RHS", ...). The scope determines if the equations
-# should be checked for regions ("regional"), only globally ("world") or
-# both ("all"). Sensitivity determines the allowed offset when comparing
-# LHS to RHS
 library(dplyr)
-library(gdx)
 
 test_that("Test if REMIND reporting is produced as it should and check data integrity", {
-  skip_if_not(as.logical(gdxrrw::igdx(silent = TRUE)), "gdxrrw is not initialized properly")
+
+  skip_on_ci()
 
   # Raise the download timeout (default is 60s), as the reference GDXs are large (>100 MB)
   # and would otherwise time out on slower connections, aborting the build.
   withr::local_options(timeout = max(600, getOption("timeout")))
 
-  # GDXs for comparison.
+  # gdx files for comparison
   gdxList <- c("fulldata-SSP2-EU21-PkBudg650-release.gdx" = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_SSP2-EU21-PkBudg650-release.gdx",
                "fulldata-SSP2-NPi-AMT.gdx"                = "https://rse.pik-potsdam.de/data/example/remind2_test-convGDX2MIF_SSP2-NPi-AMT.gdx")
 
@@ -56,9 +50,6 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
     }
   }
 
-  # uncomment to add current calibration gdxes
-  # gdxPaths <- c(gdxPaths, Sys.glob("/p/projects/remind/inputdata/CESparametersAndGDX/*.gdx"))
-
   numberOfMifs <- 0
 
   for (gdxPath in gdxPaths) {
@@ -77,7 +68,7 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
     }
 
     expect_no_error(
-      test_ranges(
+      testRanges(
         data = mifContent,
         tests = list(
           list(
@@ -92,6 +83,8 @@ test_that("Test if REMIND reporting is produced as it should and check data inte
       scenario = paste0(magclass::getItems(mifContent, dim = "scenario"), numberOfMifs),
       model = "REMIND"
     )
+
+    rm(mifContent)
   }
 
   unlink(tempdir(), recursive = TRUE)

@@ -18,8 +18,9 @@ nashConvergenceReport <- function(gdx = "fulldata.gdx", outputDir = getwd()) {
   # exist, so we do not attempt to render a (broken) report. Individual criterion pages
   # are gated further down by activeConvMessage80, so an inactive criterion (e.g. a
   # carbonprice / regipol realisation that does not use it) simply produces no page.
-  m2r <- suppressWarnings(gdx::readGDX(gdx, "module2realisation", restore_zeros = FALSE))
-  optiReali <- if (is.null(m2r)) NA_character_ else m2r[m2r$modules == "optimization", "*"]
+  m2r <- suppressWarnings(gdx2::readGDX(gdx, "module2realisation", stringsAsFactors = FALSE,
+                                        restoreZeros = FALSE))
+  optiReali <- if (is.null(m2r)) NA_character_ else m2r[m2r$modules == "optimization", "uni"]
   if (length(optiReali) == 0 || is.na(optiReali) || optiReali != "nash") {
     warning("nashConvergenceReport only supports nash optimization runs (found: ",
             if (length(optiReali) == 0 || is.na(optiReali)) "unknown" else optiReali,
@@ -58,8 +59,9 @@ nashConvergenceReport <- function(gdx = "fulldata.gdx", outputDir = getwd()) {
   )
 
   # active convergence criteria
-  activeCriteria <- suppressWarnings(gdx::readGDX(gdx_file, "activeConvMessage80"))
-  if (is.null(activeCriteria)) activeCriteria <- gdx::readGDX(gdx_file, "convMessage80") # fallback for runs before activeConvMessage80 implementation
+  activeCriteria <- suppressWarnings(gdx2::readGDX(gdx_file, "activeConvMessage80"))
+  # fallback for runs before activeConvMessage80 implementation
+  if (is.null(activeCriteria)) activeCriteria <- gdx2::readGDX(gdx_file, "convMessage80")
 
   # active reports
   d <- unname(reports[names(reports) %in% activeCriteria])

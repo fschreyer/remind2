@@ -28,7 +28,7 @@ params:
 ```{r loading_libraries, include=FALSE}
 
 library(dplyr)
-library(gdx)
+library(gdx2)
 library(ggplot2)
 library(magclass)
 library(mip)
@@ -67,8 +67,7 @@ emptyPlot <- function(var, df = NULL) {
 
 # only an iteration dimension -> static line/point over iterations
 plotOverIterations <- function(var, gdx = params$gdx) {
-  df <- mip::getPlotData(var, gdx) %>%
-    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+  df <- mip::getPlotData(var, gdx)
 
   if (nrow(df) == 0) return(emptyPlot(var, df))
 
@@ -86,7 +85,7 @@ plotOverIterations <- function(var, gdx = params$gdx) {
 # iterations are filled with 0 so every variable spans the full iteration axis
 # (cf. "Max. Trade Surplus" in plotNashConvergence.R).
 plotFlipflopStrip <- function(vars, gdx = params$gdx) {
-  lastIteration <- readGDX(gdx, "o_iterationNumber", react = "error")[[1]]
+  lastIteration <- gdx2::readGDX(gdx, "o_iterationNumber", react = "error")[[1]]
   iterations <- data.frame(iteration = seq_len(lastIteration))
 
   df <- lapply(vars, function(v) {
@@ -146,8 +145,7 @@ adjustSliderAnimation <- function(p) {
 # period x iteration -> animated, period on x with a slider over iterations.
 # Returns a tagList so the calling chunk can render it directly.
 plotOverPeriodBySlider <- function(var, gdx = params$gdx) {
-  df <- mip::getPlotData(var, gdx) %>%
-    mutate("ttot" := as.numeric(as.character(.data$ttot)))
+  df <- mip::getPlotData(var, gdx)
 
   if (nrow(df) == 0) return(htmltools::tagList(emptyPlot(var, df)))
 
@@ -180,7 +178,7 @@ configVars <- c(
 )
 
 readScalar <- function(v) {
-  x <- suppressWarnings(gdx::readGDX(params$gdx, v, react = "silent"))
+  x <- suppressWarnings(gdx2::readGDX(params$gdx, v, react = "silent"))
   if (is.null(x)) return(NA_character_)
   paste(as.character(as.vector(x)), collapse = ", ")
 }
@@ -202,7 +200,7 @@ peak budget year calculated based on maximum of cumulative CO2 emissions, used t
 exactly what the peak-budget algorithm is trying to resolve.*
 
 ```{r peak_year, results = "asis"}
-p45_peakBudgYr_check <- readGDX(params$gdx, "p45_peakBudgYr_check")
+p45_peakBudgYr_check <- gdx2::readGDX(params$gdx, "p45_peakBudgYr_check")
 allperiods <- getYears(p45_peakBudgYr_check, as.integer = TRUE)
 actualPeakBudgYr <- allperiods[p45_peakBudgYr_check == 1]
 cat(actualPeakBudgYr)

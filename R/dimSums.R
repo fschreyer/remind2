@@ -13,8 +13,10 @@
 #' @return A MAgPIE object with values summed over the specified dimensions
 #' @importFrom magclass getItems<- getItems new.magpie
 #' @author Jan Philipp Dietrich
-dimSums <- function(x, dim = 3, na.rm = FALSE) { # nolint
-  if (is.null(x)) return(x)
+dimSums <- function(x, dim = 3, na.rm = FALSE) {
+  if (is.null(x)) {
+    return(x)
+  }
   if (length(x) == 0) {
     elem <- list()
     for (i in 1:3) {
@@ -28,6 +30,8 @@ dimSums <- function(x, dim = 3, na.rm = FALSE) { # nolint
     return(out)
   }
   out <- magclass::dimSums(x, dim = dim, na.rm = na.rm)
-  if (1 %in% dim) getItems(out, dim = 1) <- "GLO"
+  if (1 %in% dim) {
+    getItems(out, dim = 1) <- "GLO"
+  }
   return(out)
 }

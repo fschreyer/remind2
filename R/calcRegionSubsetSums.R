@@ -13,10 +13,10 @@
 #'
 #'
 #' @examples
-#' calc_regionSubset_sums(population_magpie, list(xAM = c('LAM', 'NAM')))
+#' calcRegionSubsetSums(population_magpie, list(xAM = c('LAM', 'NAM')))
 
 #' @export
-calc_regionSubset_sums <- function(data, regionSubsetList) { #nolint
+calcRegionSubsetSums <- function(data, regionSubsetList) { #nolint
   if (any(is.null(regionSubsetList), is.null(data)))
     return(NULL)
 

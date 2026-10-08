@@ -11,7 +11,7 @@ reportTrade(
 )
 }
 \arguments{
-\item{gdx}{a GDX object as created by readGDX, or the path to a gdx}
+\item{gdx}{a GDX object as created by gdx2::readGDX, or the path to a gdx}
 
 \item{regionSubsetList}{a list containing regions to create report variables region
 aggregations. If NULL (default value) only the global region aggregation "GLO" will
@@ -28,8 +28,9 @@ Read in trade information from GDX file, information used in convGDX2MIF.R
 for the reporting
 }
 \examples{
-
-\dontrun{reportTrade(gdx)}
+\dontrun{
+reportTrade(gdx)
+}
 
 }
 \seealso{

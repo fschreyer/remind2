@@ -31,7 +31,7 @@ params:
 
 library(dplyr)
 library(ggplot2)
-library(gdx)
+library(gdx2)
 library(mip)
 library(plotly)
 library(remind2)
@@ -69,7 +69,7 @@ buildLabel <- function(df) {
 
 # tolerance hardcoded to 0.05 (5%) in regiCarbonPrice/postsolve.gms.
 # Read cm_implicitPriceTarget_tolerance from the gdx if exported, else fall back.
-tol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_implicitPriceTarget_tolerance", react = "silent")))
+tol <- suppressWarnings(as.numeric(gdx2::readGDX(params$gdx, "cm_implicitPriceTarget_tolerance", react = "silent")))
 if (length(tol) == 0 || is.na(tol)) tol <- 0.05
 
 dev <- getPlotDataSafe("p47_implicitPrice_dev_iter", params$gdx)
@@ -77,20 +77,12 @@ tax <- getPlotDataSafe("p47_implicitPriceTax_iter", params$gdx)
 
 if (nrow(dev) > 0) {
   dev <- dev %>%
-    rename("value" = "p47_implicitPrice_dev_iter") %>%
-    mutate(
-      "iteration" := as.numeric(as.character(.data$iteration)),
-      "ttot" := as.numeric(as.character(.data$ttot))
-    )
+    rename("value" = "p47_implicitPrice_dev_iter")
   dev$label <- buildLabel(dev)
 }
 if (nrow(tax) > 0) {
   tax <- tax %>%
-    rename("value" = "p47_implicitPriceTax_iter") %>%
-    mutate(
-      "iteration" := as.numeric(as.character(.data$iteration)),
-      "ttot" := as.numeric(as.character(.data$ttot))
-    )
+    rename("value" = "p47_implicitPriceTax_iter")
   tax$label <- buildLabel(tax)
 }
 

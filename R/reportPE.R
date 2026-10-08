@@ -5,7 +5,7 @@
 #' convGDX2MIF.R for the reporting
 #'
 #'
-#' @param gdx a GDX as created by readGDX, or the file name of a gdx
+#' @param gdx a GDX as created by gdx2::readGDX, or the file name of a gdx
 #' @param regionSubsetList a list containing regions to create report variables region
 #' aggregations. If NULL (default value) only the global region aggregation "GLO" will
 #' be created.
@@ -19,7 +19,6 @@
 #' }
 #'
 #' @export
-#' @importFrom gdx readGDX
 #' @importFrom magclass mselect getYears getNames<- mbind setNames matchDim
 
 reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150)) {
@@ -27,13 +26,15 @@ reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
   TWa_2_EJ <- 3600 * 24 * 365 / 1e6
   ####### read in needed data #########
   ## sets
-  teCCS    <- readGDX(gdx, "teCCS") # technologies with carbon capture
-  teNoCCS  <- readGDX(gdx, "teNoCCS") # technologies without CCS
-  entySe   <- readGDX(gdx, "entySe") # secondary energy types
-  peFos    <- readGDX(gdx, "peFos") # primary energy fossil fuels
-  peBio    <- readGDX(gdx, "peBio") # biomass primary energy types
-  pe2se    <- readGDX(gdx, "pe2se") # map primary energy carriers to secondary
-  pc2te    <- readGDX(gdx, "pc2te") # prod couple: mapping for own consumption and co-production of technologies
+  teCCS    <- gdx2::readGDX(gdx, "teCCS") # technologies with carbon capture
+  teNoCCS  <- gdx2::readGDX(gdx, "teNoCCS") # technologies without CCS
+  entySe   <- gdx2::readGDX(gdx, "entySe") # secondary energy types
+  peFos    <- gdx2::readGDX(gdx, "peFos") # primary energy fossil fuels
+  peBio    <- gdx2::readGDX(gdx, "peBio") # biomass primary energy types
+  # map primary energy carriers to secondary
+  pe2se    <- gdx2::readGDX(gdx, "pe2se", uniqueStyle = "classic", stringsAsFactors = FALSE)
+  # prod couple: mapping for own consumption and co-production of technologies
+  pc2te    <- gdx2::readGDX(gdx, "pc2te", uniqueStyle = "classic", stringsAsFactors = FALSE)
   pc2te    <- pc2te[(pc2te$all_enty1 %in% entySe) & (pc2te$all_enty2 %in% entySe), ] # ensure main and couple product are valid entySe
 
   seLiq    <- intersect(c("seliqfos", "seliqbio"), entySe)
@@ -41,22 +42,22 @@ reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
   seSol    <- intersect(c("sesofos", "sesobio"), entySe)
 
   ## variables
-  demPE  <- readGDX(gdx, name = "vm_demPe", field = "l", restore_zeros = FALSE)
-  prodSE <- readGDX(gdx, name = "vm_prodSe", field = "l", restore_zeros = FALSE)
+  demPE  <- gdx2::readGDX(gdx, name = "vm_demPe", select = list("_field" = "level"), restoreZeros = FALSE, uniqueStyle = "classic")
+  prodSE <- gdx2::readGDX(gdx, name = "vm_prodSe", select = list("_field" = "level"), restoreZeros = FALSE, uniqueStyle = "classic")
   y <- Reduce(intersect, list(getYears(demPE), getYears(prodSE))) # calculate minimal temporal resolution
   demPE  <- demPE[pe2se][, y, ] * TWa_2_EJ
   prodSE <- mselect(prodSE, all_enty1 = entySe)[, y, ] * TWa_2_EJ
-  fuExtr <- readGDX(gdx, "vm_fuExtr", field = "l")[, y, ] * TWa_2_EJ
-  Mport  <- readGDX(gdx, "vm_Mport", field = "l")[, y, ] * TWa_2_EJ
-  Xport  <- readGDX(gdx, "vm_Xport", field = "l")[, y, ] * TWa_2_EJ
+  fuExtr <- gdx2::readGDX(gdx, "vm_fuExtr", select = list("_field" = "level"))[, y, ] * TWa_2_EJ
+  Mport  <- gdx2::readGDX(gdx, "vm_Mport", select = list("_field" = "level"))[, y, ] * TWa_2_EJ
+  Xport  <- gdx2::readGDX(gdx, "vm_Xport", select = list("_field" = "level"))[, y, ] * TWa_2_EJ
 
   ## parameters
-  prodCouple_tmp <- readGDX(gdx, "pm_prodCouple", restore_zeros = FALSE) # share of couple production
+  prodCouple_tmp <- gdx2::readGDX(gdx, "pm_prodCouple", restoreZeros = FALSE, uniqueStyle = "classic") # share of couple production
   prodCouple <- magclass::matchDim(prodCouple_tmp, prodSE, dim = 1, fill = 0) # adjust regional dimension
   getSets(prodCouple) <- getSets(prodCouple_tmp) # necessary because matchDim overwrites sets names of dim 3
   prodCouple[prodCouple < 0] <- 0 # ignore negative values (own consumption of technologies)
 
-  pm_costsPEtradeMp <- readGDX(gdx, "pm_costsPEtradeMp", restore_zeros = FALSE)
+  pm_costsPEtradeMp <- gdx2::readGDX(gdx, "pm_costsPEtradeMp", restoreZeros = FALSE)
 
 
   ####### internal functions for reporting ###########
@@ -66,6 +67,7 @@ reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
 
     # Some technologies output a couple of SE carriers: the main product (all_enty1), and the couple product (all_enty2)
     pc2te_subset <- pc2te[(pc2te$all_enty %in% PEcarrier) & (pc2te$all_te %in% te), ]
+
     # Compute the share of a particular SE in the output of each technology by summing over its couple products (dim 3.4)
     coupleContribution <- demPE[pc2te_subset] * prodCouple[pc2te_subset] / (1 + dimSums(prodCouple[pc2te_subset], dim = 3.4))
     # Add contribution of technologies that have SEcarrier as their couple product (all_enty2) and another main product
@@ -111,7 +113,7 @@ reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
     get_demPE("peoil", te = teNoCCS,                                 name = "PE|Oil|++|w/o CC (EJ/yr)"),
     get_demPE("peoil", "seel",                                       name = "PE|Oil|+|Electricity (EJ/yr)"),
     get_demPE("peoil", seLiq,                                        name = "PE|Oil|+|Liquids (EJ/yr)"),
-    
+
     get_demPE("pegas",                                               name = "PE|+|Gas (EJ/yr)"),
     get_demPE("pegas", te = teCCS,                                   name = "PE|Gas|++|w/ CC (EJ/yr)"),
     get_demPE("pegas", te = teNoCCS,                                 name = "PE|Gas|++|w/o CC (EJ/yr)"),
@@ -190,7 +192,7 @@ reportPE <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060, 5), seq
   out <- mbind(out, dimSums(out, dim = 1))
   # add other region aggregations
   if (!is.null(regionSubsetList))
-    out <- mbind(out, calc_regionSubset_sums(out, regionSubsetList))
+    out <- mbind(out, calcRegionSubsetSums(out, regionSubsetList))
 
   getSets(out)[3] <- "variable"
   return(out)

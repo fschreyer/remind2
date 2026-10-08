@@ -12,7 +12,7 @@ reportCapitalStock(
 )
 }
 \arguments{
-\item{gdx}{a GDX object as created by readGDX, or the path to a gdx}
+\item{gdx}{a GDX object as created by gdx2::readGDX, or the path to a gdx}
 
 \item{regionSubsetList}{a list containing regions to create report variables region
 aggregations. If NULL (default value) only the global region aggregation "GLO" will
@@ -21,7 +21,7 @@ be created.}
 \item{t}{temporal resolution of the reporting, default:
 t=c(seq(2005,2060,5),seq(2070,2110,10),2130,2150)}
 
-\item{gdx_ref}{a GDX object as created by readGDX, or the path to a gdx of the reference run.
+\item{gdx_ref}{a GDX object as created by gdx2::readGDX, or the path to a gdx of the reference run.
 It is used to guarantee consistency before 'cm_startyear' for capacity variables
 using time averaging.}
 }

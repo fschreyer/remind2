@@ -7,7 +7,7 @@
 modifyInvestmentVariables(x, ref = NULL, startYear = NULL)
 }
 \arguments{
-\item{x}{a magclass object to be manipulated, must have timesteps in 'ttot'}
+\item{x}{a magclass object to be manipulated}
 
 \item{ref}{an optional magclass object to be used for fixing values before 'startYear'}
 

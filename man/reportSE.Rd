@@ -12,7 +12,7 @@ reportSE(
 )
 }
 \arguments{
-\item{gdx}{a GDX as created by readGDX, or the file name of a gdx}
+\item{gdx}{a GDX as created by gdx2::readGDX, or the file name of a gdx}
 
 \item{regionSubsetList}{a list containing regions to create report variables region
 aggregations. If NULL (default value) only the global region aggregation "GLO" will

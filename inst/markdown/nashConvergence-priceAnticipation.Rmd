@@ -81,7 +81,6 @@ if (nrow(df) == 0) {
   df <- df %>%
     rename("value" = "p80_DevPriceAnticipGlobAllMax2100Iter") %>%
     mutate(
-      "iteration" := as.numeric(as.character(.data$iteration)),
       "converged" = ifelse(!is.na(threshold) & .data$value > threshold, "no", "yes"),
       "tooltip" = paste0("Iteration: ", .data$iteration,
                          "<br>Max deviation: ", round(.data$value, 5), " T$",
@@ -125,8 +124,8 @@ df <-
 
 df.all <-
   mip::getPlotData("p80_DevPriceAnticipGlobAllMax2100Iter", params$gdx) %>%
-  mutate(all_enty = "all") %>%
-  rename(p80_DevPriceAnticipGlobMax2100Iter = p80_DevPriceAnticipGlobAllMax2100Iter)
+  mutate("all_enty" = "all") %>%
+  rename("p80_DevPriceAnticipGlobMax2100Iter" = "p80_DevPriceAnticipGlobAllMax2100Iter")
 
 df <- rbind(df, df.all)
 
@@ -157,8 +156,7 @@ where the anticipation effect lingers.*
 
 ```{r results = "asis"}
 
-df <- mip::getPlotData("p80_DevPriceAnticipGlobIter", params$gdx) %>%
-  mutate(ttot := as.numeric(ttot))
+df <- mip::getPlotData("p80_DevPriceAnticipGlobIter", params$gdx)
 
 p <- mip::mipIterations(
   plotData = df,
@@ -196,7 +194,6 @@ distorting prices.*
 
 df <-
   mip::getPlotData("p80_PriceChangePriceAnticipReg", params$gdx) %>%
-  mutate(ttot := as.numeric(ttot)) %>%
   select(-"iteration")
 
 plots <- mip::mipIterations(
@@ -229,7 +226,6 @@ the regions and goods most responsible for the remaining anticipation deviation.
 ```{r results = "asis"}
 
 df <- mip::getPlotData("p80_DevPriceAnticipReg", params$gdx) %>%
-  mutate(ttot := as.numeric(ttot)) %>%
   select(-"iteration")
 
 plots <- mip::mipIterations(
@@ -263,19 +259,18 @@ anticipation distortion.*
 ```{r results = "asis"}
 
 df <- mip::getPlotData("p80_DevPriceAnticipGlob", params$gdx) %>%
-  mutate(ttot := as.numeric(ttot)) %>%
   select(-"iteration")
 
 df.all <-
   mip::getPlotData("p80_DevPriceAnticipGlobAll", params$gdx) %>%
-  mutate(ttot := as.numeric(ttot), all_enty = "all") %>%
-  rename(p80_DevPriceAnticipGlob = p80_DevPriceAnticipGlobAll) %>%
+  mutate(all_enty = "all") %>%
+  rename("p80_DevPriceAnticipGlob" = "p80_DevPriceAnticipGlobAll") %>%
   select(-"iteration")
 
 df.allmax <-
   mip::getPlotData("p80_DevPriceAnticipGlobAllMax", params$gdx) %>%
-  mutate(ttot := as.numeric(ttot), all_enty = "allmax") %>%
-  rename(p80_DevPriceAnticipGlob = p80_DevPriceAnticipGlobAllMax) %>%
+  mutate(all_enty = "allmax") %>%
+  rename("p80_DevPriceAnticipGlob" = "p80_DevPriceAnticipGlobAllMax") %>%
   select(-"iteration")
 
 df <- rbind(df, df.all, df.allmax)

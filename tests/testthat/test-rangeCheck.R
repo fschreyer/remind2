@@ -1,6 +1,6 @@
 library(dplyr)
 
-test_that("test_ranges works for magpie object", {
+test_that("testRanges works for magpie object", {
 
   data <- bind_rows(
     expand_grid(variable = 'Foo Share (%)',
@@ -15,6 +15,6 @@ test_that("test_ranges works for magpie object", {
 
   tests <- list(list("Share.*\\((%|Percent)\\)$", low = 0, up = 100))
 
-  expect_error(test_ranges(data, tests, reaction = "stop"))
+  expect_error(testRanges(data, tests, reaction = "stop"))
 })
 

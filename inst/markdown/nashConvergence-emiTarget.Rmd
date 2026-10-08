@@ -31,7 +31,7 @@ params:
 
 library(dplyr)
 library(ggplot2)
-library(gdx)
+library(gdx2)
 library(mip)
 library(plotly)
 library(remind2)
@@ -57,11 +57,11 @@ emptyPlot <- function(var, df = NULL) {
   ggplotly(p)
 }
 
-tol <- suppressWarnings(as.numeric(gdx::readGDX(params$gdx, "cm_budgetCO2_absDevTol", react = "silent")))
+tol <- suppressWarnings(as.numeric(gdx2::readGDX(params$gdx, "cm_budgetCO2_absDevTol", react = "silent")))
 if (length(tol) == 0 || is.na(tol)) tol <- NA_real_
 
 # whether damages are internalized -> global budget check is one-sided (positive only)
-m2r <- suppressWarnings(gdx::readGDX(params$gdx, "module2realisation", react = "silent"))
+m2r <- suppressWarnings(gdx2::readGDX(params$gdx, "module2realisation", react = "silent", stringsAsFactors = FALSE))
 damagesOn <- !is.null(m2r) && m2r[m2r$modules == "internalizeDamages", 2] != "off"
 
 ```
@@ -88,14 +88,13 @@ if (nrow(df) == 0) {
   df <- df %>%
     rename("value" = "p80_globalBudget_absDev_iter") %>%
     mutate(
-      "iteration" := as.numeric(as.character(.data$iteration)),
       "converged" = if (is.na(tol)) "yes" else ifelse(.data$value > tol | (!damagesOn & .data$value < -tol), "no", "yes"),
       "tooltip" = paste0("Iteration: ", .data$iteration,
                          "<br>Deviation: ", round(.data$value, 3), " Gt CO2",
                          ifelse(.data$value > 0, " (budget exceeded)", " (below budget)"))
     )
 
-  p <- ggplot(df, aes_(x = ~iteration, y = ~value, text = ~tooltip, group = 1)) +
+  p <- ggplot(df, aes(x = iteration, y = value, text = tooltip, group = 1)) +
     { if (!is.na(tol)) {
         if (damagesOn) {
           annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = tol,
@@ -132,8 +131,7 @@ if (nrow(dfr) == 0) {
   cat("No regional budget target active in this run.")
 } else {
   dfr <- dfr %>%
-    rename("value" = "p80_regionalBudget_absDev_iter") %>%
-    mutate("iteration" := as.numeric(as.character(.data$iteration)))
+    rename("value" = "p80_regionalBudget_absDev_iter")
 
   # drop regions that are all-zero across iterations (no regional target there)
   active <- dfr %>%

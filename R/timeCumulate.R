@@ -1,4 +1,4 @@
-#' time_cumulate
+#' timeCumulate
 #'
 #' calculate cumulated values over time for a magpie object
 #'
@@ -8,7 +8,7 @@
 #' when set to TRUE, the value for 2010 is the sum of the values from 2005 - 2010,
 #' otherwise the value for 2010 is the sum of 2005 - 2009
 #' @export
-time_cumulate <- function(x, includeEndYear = FALSE) {
+timeCumulate <- function(x, includeEndYear = FALSE) {
   if (any(is.na(x))) {
     warning("The magpie object contains NAs. This might lead to unexpected results.")
   }

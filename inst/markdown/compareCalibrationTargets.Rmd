@@ -60,7 +60,7 @@ try(unloadNamespace("kableExtra"), silent = TRUE)
 
 library(kableExtra) # nolint
 library(quitte) # nolint
-library(gdx) # nolint
+library(gdx2) # nolint
 library(ggplot2) # nolint
 library(dplyr) # nolint
 library(madrat) # nolint
@@ -70,14 +70,18 @@ library(madrat) # nolint
 ```{r read, include=FALSE}
 data <- NULL
 for (i in seq(length(params$gdxPaths))) {
-  tmp <- readGDX(params$gdxPaths[[i]], "pm_cesdata", restore_zeros = FALSE)[, , "quantity"] %>% dimReduce()
+  tmp <- gdx2::readGDX(
+    params$gdxPaths[[i]], "pm_cesdata", 
+    select = list("cesParameter" = "quantity"), restoreZeros = FALSE, 
+    uniqueStyle = "classic")
+  
   if (!is.null(params$gdxPathNames)) {
-    tmp <- add_dimension(tmp,
+    tmp <- magclass::add_dimension(tmp,
       dim = 3.1, add = "scenario",
       nm = params$gdxPathNames[[i]]
     )
   } else {
-    tmp <- add_dimension(tmp,
+    tmp <- magclass::add_dimension(tmp,
       dim = 3.1, add = "scenario",
       nm = gsub("\\.", "_", rev(setdiff(
         strsplit(yamlParams$gdxPaths[[i]], "/|\\\\")[[1]], ""
@@ -99,7 +103,8 @@ regionsH12 <- unique(regionsH12$RegionCode)
 regionsEU <- toolGetMapping(name = "regionmapping_21_EU11.csv", type = "regional")
 regionsEU <- setdiff(unique(regionsEU$RegionCode), regionsH12)
 
-data <- as.quitte(data) %>% select(region, scenario, variable = all_in, period, value)
+data <- as.quitte(data) %>%
+  select("region", "scenario", "variable" = "all_in", "period", "value")
 
 .plot <- function(v, y, r) {
   df <- data %>% filter(period %in% y, variable == v, region %in% r)

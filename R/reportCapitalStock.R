@@ -3,13 +3,13 @@
 #' Read in capital stock information from GDX file, information used in convGDX2MIF.R
 #' for the reporting
 #'
-#' @param gdx a GDX object as created by readGDX, or the path to a gdx
+#' @param gdx a GDX object as created by gdx2::readGDX, or the path to a gdx
 #' @param regionSubsetList a list containing regions to create report variables region
 #' aggregations. If NULL (default value) only the global region aggregation "GLO" will
 #' be created.
 #' @param t temporal resolution of the reporting, default:
 #' t=c(seq(2005,2060,5),seq(2070,2110,10),2130,2150)
-#' @param gdx_ref a GDX object as created by readGDX, or the path to a gdx of the reference run.
+#' @param gdx_ref a GDX object as created by gdx2::readGDX, or the path to a gdx of the reference run.
 #' It is used to guarantee consistency before 'cm_startyear' for capacity variables
 #' using time averaging.
 #'
@@ -22,7 +22,6 @@
 #' }
 #'
 #' @export
-#' @importFrom gdx readGDX
 #' @importFrom magclass getYears mbind setNames
 #' @importFrom dplyr tribble
 reportCapitalStock <- function(gdx,
@@ -30,25 +29,27 @@ reportCapitalStock <- function(gdx,
                                t = c(seq(2005, 2060, 5), seq(2070, 2110, 10), 2130, 2150),
                                gdx_ref = NULL) {
 
-  module2realisation <- readGDX(gdx, "module2realisation", react = "silent")
+  module2realisation <- gdx2::readGDX(gdx, "module2realisation", react = "silent")
   tran_mod <- module2realisation[module2realisation$modules == "transport", 2]
 
   pm_conv_cap_2_MioLDV <- 650  # The world has ~715million cars in 2005 (IEA TECO2)
 
   # read sets
-  teall2rlf <- readGDX(gdx, name = c("te2rlf", "teall2rlf"), format = "first_found")
-  teue2rlf <- readGDX(gdx, name = c("teue2rlf", "tees2rlf"), format = "first_found")
+  teall2rlf <- gdx2::readGDX(gdx, name = c("te2rlf", "teall2rlf"), format = "first_found")
+  teue2rlf <- gdx2::readGDX(gdx, name = c("teue2rlf", "tees2rlf"), format = "first_found")
 
   # read variables
-  vm_cap <- readGDX(gdx, name = c("vm_cap"), field = "l", format = "first_found")
-  vm_deltaCap <- readGDX(gdx, name = c("vm_deltaCap"), field = "l", format = "first_found")
+  vm_cap <- gdx2::readGDX(gdx, name = "vm_cap", select = list("_field" = "level"), restoreZeros = FALSE)
+  vm_deltaCap <- gdx2::readGDX(gdx, name = "vm_deltaCap", select = list("_field" = "level"),
+                               restoreZeros = FALSE)
 
-  vm_costTeCapital <- readGDX(gdx, name = c("vm_costTeCapital", "v_costTeCapital"), field = "l", format = "first_found")
-  vm_cesIO <- readGDX(gdx, name = "vm_cesIO", field = "l")
+  vm_costTeCapital <- gdx2::readGDX(gdx, name = c("vm_costTeCapital", "v_costTeCapital"), select = list("_field" = "level"),
+                                    format = "first_found")
+  vm_cesIO <- gdx2::readGDX(gdx, name = "vm_cesIO", select = list("_field" = "level"))
 
   # read parameters
-  ppfKap_Ind <- readGDX(gdx, name = "ppfkap_industry_dyn37", react = "silent")
-  steel_process_based <- "steel" %in% readGDX(gdx, "secInd37Prc", react = "silent")
+  ppfKap_Ind <- gdx2::readGDX(gdx, name = "ppfkap_industry_dyn37", react = "silent")
+  steel_process_based <- "steel" %in% gdx2::readGDX(gdx, "secInd37Prc", react = "silent")
 
   # calculate maximal temporal resolution
   y <- Reduce(intersect, list(getYears(vm_cap), getYears(vm_costTeCapital)))
@@ -57,8 +58,9 @@ reportCapitalStock <- function(gdx,
   vm_costTeCapital <- vm_costTeCapital[, y, ]
 
   if (!is.null(gdx_ref)) {
-    cm_startyear <- as.integer(readGDX(gdx, name = "cm_startyear", format = "simplest"))
-    vm_deltaCapRef <- readGDX(gdx_ref, name = c("vm_deltaCap"), field = "l", format = "first_found")[, y, ]
+    cm_startyear <- as.integer(gdx2::readGDX(gdx, name = "cm_startyear", format = "simplest"))
+    vm_deltaCapRef <- gdx2::readGDX(gdx_ref, name = "vm_deltaCap",
+                                    select = list("_field" = "level"), restoreZeros = FALSE)[, y, ]
     vm_deltaCap <- modifyInvestmentVariables(vm_deltaCap, vm_deltaCapRef, cm_startyear)
   } else {
     vm_deltaCap <- modifyInvestmentVariables(vm_deltaCap)
@@ -68,7 +70,7 @@ reportCapitalStock <- function(gdx,
 
   # ---- report transport capital stocks ----
   if (tran_mod == "complex") {
-    LDV35 <- readGDX(gdx, name = c("LDV35"), format = "first_found")
+    LDV35 <- gdx2::readGDX(gdx, name = "LDV35")
     tmp <- mbind(tmp, setNames(dimSums((vm_cap * vm_costTeCapital)[teue2rlf],
                                        dim = c(3.1, 3.2)) * 1000, "Est Capital Stock|ESM|Transp vehic (billion US$2017)"))
     tmp <- mbind(tmp, setNames(dimSums((vm_cap * vm_costTeCapital)[teall2rlf][, , LDV35],
@@ -150,7 +152,7 @@ reportCapitalStock <- function(gdx,
 
   # ---- add region aggregates ----
   if (!is.null(regionSubsetList))
-    tmp <- mbind(tmp, calc_regionSubset_sums(tmp, regionSubsetList))
+    tmp <- mbind(tmp, calcRegionSubsetSums(tmp, regionSubsetList))
 
   getSets(tmp)[3] <- "variable"
 

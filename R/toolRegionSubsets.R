@@ -1,7 +1,7 @@
 #' toolRegionSubsets
 #' Returns a list of parent regions that are equal to a child mapping union of region mappings.
 #'
-#' @param gdx a GDX as created by readGDX, or the file name of a gdx.
+#' @param gdx a GDX as created by gdx2::readGDX, or the file name of a gdx.
 #' Gdx file containing child mapping regions list.
 #' @param map alternative to gdx file. You can also provide a child mapping csv file.
 #' @param parentMapping parent mapping or csv file (if NULL it uses the "regionmappingH12.csv").
@@ -19,59 +19,61 @@
 #'
 #' @author Renato Rodrigues
 #' @examples
-#'
-#' \dontrun{toolRegionSubsets(gdx)}
+#' \dontrun{
+#' toolRegionSubsets(gdx)
+#' }
 #'
 #' @export
-#' @importFrom gdx readGDX
 #' @importFrom madrat toolGetMapping
 #' @importFrom utils read.csv
 #'
 #' @export
 
-toolRegionSubsets <- function(gdx=NULL,map=NULL,parentMapping=NULL,singleMatches=FALSE, removeDuplicates=TRUE, regionIndex=NULL, countryIndex=NULL) {
+toolRegionSubsets <- function(gdx = NULL, map = NULL, parentMapping = NULL, singleMatches = FALSE, removeDuplicates = TRUE, regionIndex = NULL, countryIndex = NULL) {
 
   # default to "regionmappingH12.csv" as default
-  if (is.null(parentMapping))
+  if (is.null(parentMapping)) {
     parentMapping <- toolGetMapping(type = "regional", name = "regionmappingH12.csv", returnPathOnly = TRUE)
+  }
 
   # reading parent mapping
-  if(!(is.data.frame(parentMapping))) {
-    if(!file.exists(parentMapping)) stop("Cannot find given region mapping file!")
+  if (!(is.data.frame(parentMapping))) {
+    if (!file.exists(parentMapping)) stop("Cannot find given region mapping file!")
     parentMapping <- read.csv(parentMapping, as.is = TRUE, sep = ";")
   }
-  if(is.null(regionIndex)) {
-    regionIndex <- ifelse(dim(unique(parentMapping[ncol(parentMapping)]))[1] < dim(unique(parentMapping[ncol(parentMapping)-1]))[1],ncol(parentMapping),ncol(parentMapping)-1)
+  if (is.null(regionIndex)) {
+    regionIndex <- ifelse(dim(unique(parentMapping[ncol(parentMapping)]))[1] < dim(unique(parentMapping[ncol(parentMapping) - 1]))[1], ncol(parentMapping), ncol(parentMapping) - 1)
   }
-  if(is.null(countryIndex)) {
-    countryIndex <- ifelse(dim(unique(parentMapping[ncol(parentMapping)]))[1] > dim(unique(parentMapping[ncol(parentMapping)-1]))[1],ncol(parentMapping),ncol(parentMapping)-1)
+  if (is.null(countryIndex)) {
+    countryIndex <- ifelse(dim(unique(parentMapping[ncol(parentMapping)]))[1] > dim(unique(parentMapping[ncol(parentMapping) - 1]))[1], ncol(parentMapping), ncol(parentMapping) - 1)
   }
 
-  #child mapping
+  # child mapping
   if (!(is.null(gdx))) {
-    childMapping <- readGDX(gdx, name = "regi2iso")
+    childMapping <- gdx2::readGDX(gdx, name = "regi2iso", stringsAsFactors = FALSE)
   } else if (!(is.null(map))) {
-    childMapping <- read.csv(map,sep=";")[,c(3,2)]
+    childMapping <- read.csv(map, sep = ";")[, c(3, 2)]
   } else {
     stop("You need to provide a gdx or a mapping file!")
   }
 
   # creating subsets list
   list <- list()
-  for (parentRegion in unique(parentMapping[[regionIndex]])){
-    parentCountries <- parentMapping[parentMapping[[regionIndex]]==parentRegion,][[countryIndex]]
+  for (parentRegion in unique(parentMapping[[regionIndex]])) {
+    parentCountries <- parentMapping[parentMapping[[regionIndex]] == parentRegion, ][[countryIndex]]
     regionsSubset <- NULL
-    for (childRegion in unique(childMapping[[1]])){
+    for (childRegion in unique(childMapping[[1]])) {
       if ((removeDuplicates == FALSE) || (parentRegion != childRegion)) {
-        childCountries <- childMapping[childMapping[[1]]==childRegion,][[2]]
-        if (all(childCountries %in% parentCountries)){
-          regionsSubset <- c(regionsSubset,childRegion)
+        childCountries <- childMapping[childMapping[[1]] == childRegion, ][[2]]
+        if (all(childCountries %in% parentCountries)) {
+          regionsSubset <- c(regionsSubset, childRegion)
         }
       }
     }
-    if ((length(regionsSubset) > 1) || ((length(regionsSubset) == 1) & (singleMatches==TRUE)))
+    if ((length(regionsSubset) > 1) || ((length(regionsSubset) == 1) & (singleMatches == TRUE))) {
       list[[parentRegion]] <- regionsSubset
+    }
   }
-  if (length(list)==0) list <- NULL
+  if (length(list) == 0) list <- NULL
   return(list)
 }

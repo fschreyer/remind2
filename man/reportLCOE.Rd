@@ -7,7 +7,7 @@
 reportLCOE(gdx, output.type = "both")
 }
 \arguments{
-\item{gdx}{a GDX object as created by readGDX, or the path to a gdx}
+\item{gdx}{a GDX object as created by gdx2::readGDX, or the path to a gdx}
 
 \item{output.type}{string to determine which output shall be produced.
 Can be either "average" (returns only average LCOE),
@@ -39,9 +39,6 @@ the lifetime of the plant (intertemporal prices).
 reportLCOE(gdx)
 }
 
-}
-\seealso{
-\code{\link{convGDX2MIF_LCOE}}
 }
 \author{
 Felix Schreyer, Robert Pietzcker, Lavinia Baumstark

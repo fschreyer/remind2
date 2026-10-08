@@ -5,7 +5,7 @@
 #' convGDX2MIF.R for the reporting
 #'
 #'
-#' @param gdx a GDX as created by readGDX, or the file name of a gdx
+#' @param gdx a GDX as created by gdx2::readGDX, or the file name of a gdx
 #' @param regionSubsetList a list containing regions to create report variables region
 #' aggregations. If NULL (default value) only the global region aggregation "GLO" will
 #' be created.
@@ -18,11 +18,9 @@
 #'   \dontrun{reportFE(gdx)}
 #'
 #' @export
-#' @importFrom gdx readGDX
 #' @importFrom magclass new.magpie mselect getRegions getYears mbind setNames getNames<- as.data.frame as.magpie getSets
-#' @importFrom dplyr %>% filter full_join group_by left_join mutate rename select semi_join summarize ungroup
+#' @importFrom dplyr filter full_join group_by left_join mutate rename select semi_join summarize ungroup
 #' @importFrom quitte inline.data.frame revalue.levels
-#' @importFrom rlang syms
 #' @importFrom tibble as_tibble tibble tribble
 #' @importFrom tidyr complete crossing expand_grid replace_na
 #' @importFrom utils tail
@@ -40,20 +38,21 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   # ---- read in needed data
 
   # ---- sets
-  se2fe <- readGDX(gdx, "se2fe")
-  entyFe2Sector <- readGDX(gdx, "entyFe2Sector")
-  sector2emiMkt <- readGDX(gdx, "sector2emiMkt")
+  se2fe <- gdx2::readGDX(gdx, "se2fe", uniqueStyle = "classic", stringsAsFactors = FALSE)
+  entyFe2Sector <- gdx2::readGDX(gdx, "entyFe2Sector", stringsAsFactors = FALSE)
+  sector2emiMkt <- gdx2::readGDX(gdx, "sector2emiMkt", stringsAsFactors = FALSE)
 
-  entyFe2sector2emiMkt_NonEn <- readGDX(gdx, "entyFe2sector2emiMkt_NonEn", react = "silent")
-  if (is.null(entySEfos <- readGDX(gdx, "entySEfos", react = "silent"))) {
+  entyFe2sector2emiMkt_NonEn <- gdx2::readGDX(gdx, "entyFe2sector2emiMkt_NonEn", stringsAsFactors = FALSE,
+                                              react = "silent")
+  if (is.null(entySEfos <- gdx2::readGDX(gdx, "entySEfos", react = "silent"))) {
     entySEfos <- c("sesofos", "seliqfos", "segafos")
   }
 
-  if (is.null(entySEbio <- readGDX(gdx, "entySEbio", react = "silent"))) {
+  if (is.null(entySEbio <- gdx2::readGDX(gdx, "entySEbio", react = "silent"))) {
     entySEbio <- c("sesobio", "seliqbio", "segabio")
   }
 
-  if (is.null(entySEsyn <- readGDX(gdx, "entySEsyn", react = "silent")) ||
+  if (is.null(entySEsyn <- gdx2::readGDX(gdx, "entySEsyn", react = "silent")) ||
       (length(entySEbio) == length(entySEsyn) && all(entySEbio == entySEsyn))) {
     entySEsyn <- c("seliqsyn", "segasyn")
   }
@@ -67,35 +66,28 @@ reportFE <- function(gdx, regionSubsetList = NULL,
     select(-"all_te")
 
   # ---- parameter
-  p_eta_conv <- readGDX(gdx, c("pm_eta_conv"), restore_zeros = FALSE, format = "first_found")[, t, ]
+  p_eta_conv <- gdx2::readGDX(gdx, "pm_eta_conv", restoreZeros = FALSE)[, t, ]
 
   # ---- variables
-  vm_prodSe <- readGDX(gdx,
-                       name = c("vm_prodSe", "v_seprod"), field = "l",
-                       restore_zeros = FALSE, format = "first_found"
+  vm_prodSe <- gdx2::readGDX(gdx,
+                             name = c("vm_prodSe", "v_seprod"), select = list("_field" = "level"),
+                             restoreZeros = FALSE, format = "first_found", uniqueStyle = "classic"
   )[, t, ] * TWa_2_EJ
-  vm_prodFe <- readGDX(gdx,
-                       name = c("vm_prodFe"), field = "l",
-                       restore_zeros = FALSE, format = "first_found"
+  vm_prodFe <- gdx2::readGDX(gdx,
+                             name = "vm_prodFe", select = list("_field" = "level"),
+                             restoreZeros = FALSE, uniqueStyle = "classic"
   )[, t, ] * TWa_2_EJ
-  vm_demFeSector <- readGDX(gdx,
-                            name = c("vm_demFeSector"), field = "l",
-                            restore_zeros = FALSE, format = "first_found"
-  )[, t, ] * TWa_2_EJ
+  vm_demFeSector <- gdx2::readGDX(gdx,
+                                  name = "vm_demFeSector", select = list("_field" = "level"),
+                                  restoreZeros = FALSE, uniqueStyle = "classic")[, t, ] * TWa_2_EJ
   vm_demFeSector[is.na(vm_demFeSector)] <- 0
 
-  ## Ensure backwards compatibility for release version 3.6.0 (can be removed with 3.7.0)
-  getNames(vm_demFeSector, dim = 3) <- tolower(getNames(vm_demFeSector, dim = 3))
-  ## End backwards compatibility
-
-
   # FE non-energy use
-  vm_demFENonEnergySector <- readGDX(gdx, "vm_demFENonEnergySector",
-                                     field = "l",
-                                     spatial = 2, restore_zeros = FALSE,
-                                     react = "silent"
+  vm_demFENonEnergySector <- gdx2::readGDX(gdx, "vm_demFENonEnergySector",
+                                           select = list("_field" = "level"),
+                                           spatial = 2, restoreZeros = FALSE,
+                                           react = "silent", uniqueStyle = "classic"
   )[, t, ] * TWa_2_EJ
-
 
   # only retain combinations of SE, FE, sector, and emiMkt which actually exist in the model (see qm_balFe)
   vm_demFeSector <- vm_demFeSector[demFemapping]
@@ -104,9 +96,8 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   vm_prodFe <- vm_prodFe[se2fe]
 
   # FE demand per industry subsector
-  o37_demFeIndSub <- readGDX(gdx, "o37_demFeIndSub",
-                             restore_zeros = FALSE,
-                             format = "first_found", react = "silent"
+  o37_demFeIndSub <- gdx2::readGDX(gdx, "o37_demFeIndSub", restoreZeros = FALSE,
+                                   react = "silent", uniqueStyle = "classic"
   )
   o37_demFeIndSub <- o37_demFeIndSub[, t, ]
   o37_demFeIndSub[is.na(o37_demFeIndSub)] <- 0
@@ -117,7 +108,7 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   ####### Realisation specific Variables ##########
 
   # Define current realisation for the different modules
-  module2realisation <- readGDX(gdx, "module2realisation")
+  module2realisation <- gdx2::readGDX(gdx, "module2realisation", stringsAsFactors = FALSE)
   rownames(module2realisation) <- module2realisation$modules
 
   find_real_module <- function(module_set, module_name) {
@@ -128,12 +119,11 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   indu_mod <- find_real_module(module2realisation, "industry")
   buil_mod <- find_real_module(module2realisation, "buildings")
 
-  any_process_based <- length(readGDX(gdx, "secInd37Prc", react = "silent")) > 0.
-  steel_process_based <- "steel" %in% readGDX(gdx, "secInd37Prc", react = "silent")
+  any_process_based <- length(gdx2::readGDX(gdx, "secInd37Prc", react = "silent")) > 0.
+  steel_process_based <- "steel" %in% gdx2::readGDX(gdx, "secInd37Prc", react = "silent")
 
 
   # Preliminary Calculations ----
-
 
   # calculate FE non-energy use and FE without non-energy use
   vm_demFENonEnergySector <- mselect(vm_demFENonEnergySector[demFemapping],
@@ -144,7 +134,9 @@ reportFE <- function(gdx, regionSubsetList = NULL,
 
   # calculate FE without non-energy use
   vm_demFeSector_woNonEn <- vm_demFeSector
-  vm_demFeSector_woNonEn[, , getNames(vm_demFENonEnergySector)] <- vm_demFeSector[, , getNames(vm_demFENonEnergySector)] - vm_demFENonEnergySector
+
+  vm_demFeSector_woNonEn[, , getNames(vm_demFENonEnergySector)] <-
+    vm_demFeSector[, , getNames(vm_demFENonEnergySector)] - vm_demFENonEnergySector
 
 
   # ---- FE total production (incl. non-energy use) ------
@@ -516,25 +508,26 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   # ---- sets
 
   # ---- parameter
-  pm_cesdata <- readGDX(gdx, "pm_cesdata")[, t, ]
+  pm_cesdata <- gdx2::readGDX(gdx, "pm_cesdata")[, t, ]
 
   # ---- variables
   if (tran_mod == "edge_esm") {
-    vm_demFeForEs <- readGDX(gdx, name = c("vm_demFeForEs"), field = "l", restore_zeros = FALSE, format = "first_found", react = "silent")[, t, ] * TWa_2_EJ
+    vm_demFeForEs <- gdx2::readGDX(gdx, name = "vm_demFeForEs", select = list("_field" = "level"), restoreZeros = FALSE, react = "silent")[, t, ] * TWa_2_EJ
   }
 
   # CES nodes, convert from TWa to EJ
-  vm_cesIO <- readGDX(gdx, name = c("vm_cesIO"), field = "l", restore_zeros = FALSE, format = "first_found")[, t, ] * TWa_2_EJ
+  vm_cesIO <- gdx2::readGDX(gdx, name = "vm_cesIO", select = list("_field" = "level"),
+                            restoreZeros = FALSE)[, t, ] * TWa_2_EJ
 
   if (any_process_based) {
-    o37_demFePrc <- readGDX(gdx, name = c("o37_demFePrc"), restore_zeros = FALSE, format = "first_found")[, t, ] * TWa_2_EJ
+    o37_demFePrc <- gdx2::readGDX(gdx, name = "o37_demFePrc", restoreZeros = FALSE)[, t, ] * TWa_2_EJ
     o37_demFePrc[is.na(o37_demFePrc)] <- 0.
-    o37_ProdIndRoute <- readGDX(gdx, name = c("o37_ProdIndRoute"), restore_zeros = FALSE, format = "first_found", react = "silent")[, t, ]
+    o37_ProdIndRoute <- gdx2::readGDX(gdx, name = "o37_ProdIndRoute", restoreZeros = FALSE, react = "silent")[, t, ]
     o37_ProdIndRoute[is.na(o37_ProdIndRoute)] <- 0.
-    o37_demFeIndRoute <- readGDX(gdx, name = c("o37_demFeIndRoute"), restore_zeros = FALSE, format = "first_found", react = "silent")[, t, ] * TWa_2_EJ
+    o37_demFeIndRoute <- gdx2::readGDX(gdx, name = "o37_demFeIndRoute", restoreZeros = FALSE, react = "silent")[, t, ] * TWa_2_EJ
     o37_demFeIndRoute[is.na(o37_demFeIndRoute)] <- 0.
     # mapping of process to output materials
-    tePrc2ue <- readGDX(gdx, "tePrc2ue", restore_zeros = FALSE)
+    tePrc2ue <- gdx2::readGDX(gdx, "tePrc2ue", restoreZeros = FALSE)
   }
 
   # ---- transformations
@@ -548,7 +541,7 @@ reportFE <- function(gdx, regionSubsetList = NULL,
 
   # ---- Buildings Module ----
 
-  p36_floorspace <- readGDX(gdx, "p36_floorspace", react = "silent")[, t, ]
+  p36_floorspace <- gdx2::readGDX(gdx, "p36_floorspace", react = "silent")[, t, ]
   if (!is.null(p36_floorspace)) {
     if (dim(p36_floorspace)[3] > 1) {
       out <- mbind(
@@ -608,9 +601,10 @@ reportFE <- function(gdx, regionSubsetList = NULL,
     # UE demand in buildings for each carrier
     # this buildings realisation only works on a FE level but the UE demand is
     # estimated here assuming the FE-UE efficiency of the basline (from EDGE-B)
-    p36_uedemand_build <- readGDX(gdx, "p36_uedemand_build", react = "silent")[, t, ]
+    p36_uedemand_build <- gdx2::readGDX(gdx, "p36_uedemand_build", react = "silent")[, t, ]
     if (!is.null(p36_uedemand_build)) {
-      pm_fedemandBuild <- readGDX(gdx, name = c("pm_fedemandBuild", "pm_fedemand"))[, t, ]
+      pm_fedemandBuild <- gdx2::readGDX(gdx, name = c("pm_fedemandBuild", "pm_fedemand"),
+                                        format = "first_found")[, t, ]
       feUeEff_build <- p36_uedemand_build[, , names(carrierBuild)] /
         pm_fedemandBuild[, , names(carrierBuild)]
       feUeEff_build[is.na(feUeEff_build) | is.infinite(feUeEff_build)] <- 1
@@ -851,7 +845,7 @@ reportFE <- function(gdx, regionSubsetList = NULL,
       )
     } else {
       # mapping of industrial output to energy production factors in CES tree
-      ces_eff_target_dyn37 <- readGDX(gdx, "ces_eff_target_dyn37")
+      ces_eff_target_dyn37 <- gdx2::readGDX(gdx, "ces_eff_target_dyn37")
 
       # energy production factors for primary and secondary steel
       en.ppfen.primary.steel <- ces_eff_target_dyn37 %>%
@@ -953,7 +947,7 @@ reportFE <- function(gdx, regionSubsetList = NULL,
 
   if (tran_mod == "edge_esm") {
     ## define the set that contains fe2es for transport
-    fe2es_dyn35 <- readGDX(gdx, c("fe2es_dyn35"), format = "first_found")
+    fe2es_dyn35 <- gdx2::readGDX(gdx, "fe2es_dyn35")
 
     vm_demFeForEs_trnsp <- vm_demFeForEs[fe2es_dyn35]
 
@@ -1023,7 +1017,8 @@ reportFE <- function(gdx, regionSubsetList = NULL,
 
   #--- CDR ---
 
-  v33_FEdemand <- readGDX(gdx, name = c("v33_FEdemand"), field = "l", restore_zeros = FALSE)[, t, ] * TWa_2_EJ
+  v33_FEdemand <- gdx2::readGDX(gdx, name = c("v33_FEdemand"), select = list("_field" = "level"),
+                                restoreZeros = FALSE, uniqueStyle = "classic")[, t, ] * TWa_2_EJ
   # KK: Mappings from gams set names to names in mifs. If new CDR methods are added to REMIND, please add
   # the method to CDR_te_list: "<method name in REMIND>"="<method name displayed in reporting>"
   # If a final energy carrier not included in CDR_FE_list is used, please also add it to the list.
@@ -1348,7 +1343,7 @@ reportFE <- function(gdx, regionSubsetList = NULL,
   out <- mbind(out, dimSums(out, dim = 1))
   # add other region aggregations
   if (!is.null(regionSubsetList)) {
-    out <- mbind(out, calc_regionSubset_sums(out, regionSubsetList))
+    out <- mbind(out, calcRegionSubsetSums(out, regionSubsetList))
   }
 
 

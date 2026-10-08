@@ -114,10 +114,8 @@ if (nrow(sm) == 0) {
   cat("p80_surplusMax_iter is empty in this gdx.")
 } else {
   sm <- sm %>%
-    rename("value" = "p80_surplusMax_iter") %>%
-    mutate("iteration" := as.numeric(as.character(.data$iteration)),
-           "tall" := as.numeric(as.character(.data$tall)))
-
+    rename("value" = "p80_surplusMax_iter")
+  
   horizon <- if (2100 %in% sm$tall) 2100 else max(sm$tall)
 
   smtol <- mip::getPlotData("p80_surplusMaxTolerance", params$gdx) %>%
@@ -199,8 +197,7 @@ is not yet cleared.
 
 ```{r p80_surplus___READ, echo=FALSE, include=FALSE}
 
-p80_surplus <- mip::getPlotData("p80_surplus", params$gdx) %>%
-  mutate(tall := as.numeric(tall))
+p80_surplus <- mip::getPlotData("p80_surplus", params$gdx)
 str(p80_surplus)
 
 p80_surplusMaxTolerance <-
@@ -317,7 +314,6 @@ these prices should stop moving between iterations. Same four views as above.
 ```{r p80_pvp_itr___READ, echo=FALSE, include=FALSE}
 
 p80_pvp_itr <- mip::getPlotData("p80_pvp_itr", params$gdx) %>%
-  mutate(ttot := as.numeric(ttot)) %>%
   filter(ttot >= 2005)
 str(p80_pvp_itr)
 
@@ -427,7 +423,7 @@ price_not_discounted_itr <- left_join(
 
 price_not_discounted_itr_good <- p80_pvp_itr %>%
   filter(all_enty == "good") %>%
-  mutate("p80_pvp_itr_no_discount" := .data$p80_pvp_itr * 1.05 ** (.data$ttot - 2005)) %>%
+  mutate("p80_pvp_itr_no_discount" = .data$p80_pvp_itr * 1.05 ** (.data$ttot - 2005)) %>%
   select(-"p80_pvp_itr")
 
 price_not_discounted_itr <-

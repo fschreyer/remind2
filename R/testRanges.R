@@ -35,16 +35,14 @@
 #'
 #' tests <- list(list("Share.*\\((%|Percent)\\)$", low = 0, up = 100))
 #'
-#' test_ranges(data, tests)
+#' testRanges(data, tests)
 #'
 #' @importFrom dplyr distinct filter last pull
 #' @importFrom quitte magclass_to_tibble
 #' @importFrom tidyr unite
 #' @importFrom tidyselect everything
-#' @importFrom rlang !! sym
-
 #' @export
-test_ranges <- function(data, tests, reaction = c('message', 'stop'),
+testRanges <- function(data, tests, reaction = c('message', 'stop'),
                         report.missing = FALSE) {
 
   match.arg(reaction)

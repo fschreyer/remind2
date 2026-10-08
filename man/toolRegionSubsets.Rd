@@ -16,7 +16,7 @@ toolRegionSubsets(
 )
 }
 \arguments{
-\item{gdx}{a GDX as created by readGDX, or the file name of a gdx.
+\item{gdx}{a GDX as created by gdx2::readGDX, or the file name of a gdx.
 Gdx file containing child mapping regions list.}
 
 \item{map}{alternative to gdx file. You can also provide a child mapping csv file.}
@@ -44,8 +44,9 @@ toolRegionSubsets
 Returns a list of parent regions that are equal to a child mapping union of region mappings.
 }
 \examples{
-
-\dontrun{toolRegionSubsets(gdx)}
+\dontrun{
+toolRegionSubsets(gdx)
+}
 
 }
 \author{

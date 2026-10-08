@@ -182,10 +182,37 @@ data <- data %>%
   mutate(variable = gsub("|Elec|", "|Electricity|", .data$variable, fixed = TRUE))
 
 
+# compute validation thresholds ----
+
+# If a validation config is given, run piamValidation on the scenario and
+# historical data and provide the resulting thresholds as a global option.
+# Line plots (see mip::createLinePlots()) show thresholds matching the
+# plotted variable, unit, region and period as colored background bands.
+if (!is.null(params$validationConfig)) {
+  if (requireNamespace("piamValidation", quietly = TRUE)) {
+    validationThresholds <- tryCatch({
+      valiData <- piamValidation::validateScenarios(
+        c(params$mifScen, params$mifHist),
+        config = params$validationConfig)
+      piamValidation::getThresholdBands(valiData)
+    },
+    error = function(e) {
+      warning("Computing validation thresholds failed, no thresholds will ",
+              "be shown. ", conditionMessage(e))
+      NULL
+    })
+    options(mip.validationThresholds = validationThresholds) # nolint
+  } else {
+    warning("Package piamValidation is not available, validationConfig is ",
+            "ignored.")
+  }
+}
+
 # remove preprocessing objects not to be used anymore ----
 varNames <- c(
   "dataGDP", "dataPCap", "dataPGdp", "dataPop",
-  "histRefModel", "pCapVariables", "pGdpVariables")
+  "histRefModel", "pCapVariables", "pGdpVariables",
+  "valiData", "validationThresholds")
 for (vn in varNames) if (exists(vn)) rm(list = vn)
 rm(varNames)
 rm(vn)
