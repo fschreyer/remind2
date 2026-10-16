@@ -44,7 +44,7 @@ reportExtraction <- function(gdx, regionSubsetList = NULL, t = c(seq(2005, 2060,
   datarog <- gdx2::readGDX(gdx, name = c("p31_costExPoly", "p31_datarog"), format = "first_found")
   datarog2 <- gdx2::readGDX(gdx, name = "p31_ffPolyCoeffs")
   pebiolc_demandmag <- gdx2::readGDX(gdx, name = c("pm_pebiolc_demandmag", "p30_pebiolc_demandmag"), format = "first_found")
-  p_cint <- gdx2::readGDX(gdx, name = c("pm_cint", "p_cint"), format = "first_found",
+  p_cint <- gdx2::readGDX(gdx, name = c("pm_cint", "p10_cint", "p_cint"), format = "first_found",
                           react = "silent", uniqueStyle = "classic")
   fuExtrOwnCons <- gdx2::readGDX(gdx, name = "pm_fuExtrOwnCons", uniqueStyle = "classic")
   ## variables

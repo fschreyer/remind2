@@ -135,14 +135,15 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                                    restoreZeros = FALSE)
 
   # energy extraction energy-related CO2 emissions
-  v_emiEnFuelEx <- gdx2::readGDX(gdx, "v_emiEnFuelEx", select = list("_field" = "level"),
-                                 restoreZeros = FALSE)
+  v_emiEnFuelEx <- gdx2::readGDX(gdx, c("v10_emiEnFuelEx", "v_emiEnFuelEx"),
+                                 select = list("_field" = "level"), restoreZeros = FALSE)
 
   ### for emissions of energy system technologies
   # emission factors of technologies
   pm_emifac <- gdx2::readGDX(gdx, "pm_emifac", restoreZeros = FALSE, uniqueStyle = "classic")[, t, ]
   # emissions factors of non-energy use
-  pm_emifacNonEnergy <- gdx2::readGDX(gdx, "pm_emifacNonEnergy", restoreZeros = FALSE, react = "silent")[, t, ]
+  pm_emifacNonEnergy <- gdx2::readGDX(gdx, c("p37_emifacNonEnergy", "pm_emifacNonEnergy"),
+                                      restoreZeros = FALSE, react = "silent")[, t, ]
   # primary energy demand (pe2se emissions factors applied to)
   vm_demPE <- gdx2::readGDX(gdx, "vm_demPE", select = list("_field" = "level"), restoreZeros = FALSE)[, t, ]
   # final energy demand (se2fe emissions factors applied to)
@@ -227,7 +228,8 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   # CO2 released by CCU
   vm_co2CCUshort <- gdx2::readGDX(gdx, "vm_co2CCUshort", select = list("_field" = "level"), restoreZeros = FALSE)[, t, ]
   # variable to release captured CO2 when no CCU capacities are standing anymore vent captured CO2
-  v_co2capturevalve <- gdx2::readGDX(gdx, "v_co2capturevalve", select = list("_field" = "level"), restoreZeros = FALSE)[, t, ]
+  v_co2capturevalve <- gdx2::readGDX(gdx, c("vm_co2capturevalve", "v_co2capturevalve"),
+                                     select = list("_field" = "level"), restoreZeros = FALSE)[, t, ]
 
   # maximum annual CO2 storage potential assumed
   # collapseDim removes 'cco2', 'ico2', and 'rlf' dimensions and keeps only 'ccsinjeon/ccsinjeoff'
@@ -382,7 +384,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
     spatial = 2, react = "silent", uniqueStyle = "classic"
   )[, t, ]
 
-  pm_incinerationRate <- gdx2::readGDX(gdx, "pm_incinerationRate",
+  pm_incinerationRate <- gdx2::readGDX(gdx, c("p37_incinerationRate", "pm_incinerationRate"),
     restoreZeros = FALSE, spatial = 2, react = "silent")[, t, ]
 
   # replace NA by 0
