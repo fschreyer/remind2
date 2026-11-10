@@ -61,7 +61,7 @@ reportPrices <- function(gdx, output = NULL, regionSubsetList = NULL,
 
   ####### conversion factors ##########
   s_GWP_CH4 <- as.numeric(gdx2::readGDX(gdx, c("sm_gwpCH4", "s_gwpCH4", "s_GWP_CH4"), format = "first_found", react = "silent"))
-  s_GWP_N2O <- as.numeric(gdx2::readGDX(gdx, c("s_gwpN2O", "s_GWP_N2O"), format = "first_found", react = "silent"))
+  s_GWP_N2O <- as.numeric(gdx2::readGDX(gdx, c("sm_gwpN2O", "s_gwpN2O", "s_GWP_N2O"), format = "first_found", react = "silent"))
   s_twa2mwh <- as.numeric(gdx2::readGDX(gdx, "sm_TWa_2_MWh", react = "silent"))
   s_tBC_2_TWa <- as.numeric(gdx2::readGDX(gdx, name = "sm_tBC_2_TWa"))
   sm_trillion_2_non <- as.numeric(gdx2::readGDX(gdx, "sm_trillion_2_non"))
@@ -674,7 +674,7 @@ reportPrices <- function(gdx, output = NULL, regionSubsetList = NULL,
   pm_emifac <- gdx2::readGDX(gdx, "pm_emifac", restoreZeros = FALSE, uniqueStyle = "classic")[, YearsFrom2005, "co2"][, , tech.fossil] # [GtC CO2/TWa]
   pm_emifac <- pm_emifac * 1e9 / s_twa2mwh / 3.6 # [GtC CO2/TWa] -> [tC CO2/GJ]
 
-  p_priceCO2 <- gdx2::readGDX(gdx, name = c("p_priceCO2", "pm_priceCO2"), format = "first_found", restoreZeros = FALSE) # [USD2017/tC CO2]
+  p_priceCO2 <- gdx2::readGDX(gdx, name = c("p10_priceCO2", "p_priceCO2", "pm_priceCO2"), format = "first_found", restoreZeros = FALSE) # [USD2017/tC CO2]
   if (length(p_priceCO2) > 0) {
     p_priceCO2 <- add_columns(p_priceCO2, addnm = setdiff(YearsFrom2005, getYears(p_priceCO2)), dim = 2, fill = NA)
     p_priceCO2 <- add_columns(p_priceCO2, addnm = setdiff(getItems(pm_emifac, dim = 1), getItems(p_priceCO2, dim = 1)), dim = 1, fill = NA)

@@ -125,7 +125,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   # emissions from MAC curves (non-energy emissions)
   vm_emiMacSector <- gdx2::readGDX(gdx, "vm_emiMacSector", select = list("_field" = "level"),
                                    restoreZeros = FALSE)[, t, ]
-  p_co2lucSub <- gdx2::readGDX(gdx, "p_co2lucSub", restoreZeros = TRUE, react = "silent")[, t, ]
+  p_co2lucSub <- gdx2::readGDX(gdx, c("p10_co2lucSub", "p_co2lucSub"), format = "first_found", restoreZeros = TRUE, react = "silent")[, t, ]
 
   # F-Gases
   vm_emiFgas <- gdx2::readGDX(gdx, "vm_emiFgas", select = list("_field" = "level"),

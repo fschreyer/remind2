@@ -127,7 +127,7 @@ reportCosts <- function(gdx,
 
   # Equations
   finenbal <- gdx2::readGDX(gdx, name = c("fe2ppfEn", "finenbal"), type = "Set", format = "first_found", stringsAsFactors = FALSE)
-  pebal.m <- gdx2::readGDX(gdx, name = c("q_balPe", "qm_pebal"), type = "Equation",
+  pebal.m <- gdx2::readGDX(gdx, name = c("qm_balPe", "q_balPe", "qm_pebal"), type = "Equation",
                            select = list("_field" = "marginal"), format = "first_found")
   budget.m <- gdx2::readGDX(gdx, name = "qm_budget", type = "Equation",
                             select = list("_field" = "marginal"), format = "first_found")
