@@ -135,7 +135,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
                                    restoreZeros = FALSE)
 
   # energy extraction energy-related CO2 emissions
-  v_emiEnFuelEx <- gdx2::readGDX(gdx, c("v10_emiEnFuelEx", "v_emiEnFuelEx"),
+  v_emiEnFuelEx <- gdx2::readGDX(gdx, c("v10_emiEnFuelEx", "v_emiEnFuelEx"), format = "first_found",
                                  select = list("_field" = "level"), restoreZeros = FALSE)
 
   ### for emissions of energy system technologies
@@ -228,7 +228,7 @@ reportEmi <- function(gdx, output = NULL, regionSubsetList = NULL,
   # CO2 released by CCU
   vm_co2CCUshort <- gdx2::readGDX(gdx, "vm_co2CCUshort", select = list("_field" = "level"), restoreZeros = FALSE)[, t, ]
   # variable to release captured CO2 when no CCU capacities are standing anymore vent captured CO2
-  v_co2capturevalve <- gdx2::readGDX(gdx, c("vm_co2capturevalve", "v_co2capturevalve"),
+  v_co2capturevalve <- gdx2::readGDX(gdx, c("vm_co2capturevalve", "v_co2capturevalve"), format = "first_found",
                                      select = list("_field" = "level"), restoreZeros = FALSE)[, t, ]
 
   # maximum annual CO2 storage potential assumed
