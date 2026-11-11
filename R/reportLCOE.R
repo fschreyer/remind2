@@ -171,7 +171,7 @@ reportLCOE <- function(gdx, output.type = "both") {
                                   format = "first_found")
     vm_emiCdrTeDetail <- gdx2::readGDX(gdx, c("vm_emiCdrTeDetail", "v33_emi"),
                                        select = list("_field" = "level"), restoreZeros = FALSE,
-                                       react = "silent")[, ttot_from2005, teCDR]
+                                       react = "silent", format = "first_found")[, ttot_from2005, teCDR]
     if (is.null(vm_emiCdrTeDetail)) { # compatibility with the CDR module before the portfolio was added
       # captured CO2 by DAC
       v33_emiDAC <- gdx2::readGDX(gdx, "v33_emiDAC", select = list("_field" = "level"),
